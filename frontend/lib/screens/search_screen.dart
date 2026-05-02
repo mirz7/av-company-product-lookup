@@ -1,9 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
 import 'package:simple_barcode_scanner/simple_barcode_scanner.dart';
-import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -16,41 +14,44 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final _searchController = TextEditingController();
   final ApiService _apiService = ApiService();
-  bool _isLoading = false;
+  bool _isSearching = false;
+  bool _loadingFrequent = true;
   Map<String, dynamic>? _productData;
   String? _errorMessage;
+  List<Map<String, dynamic>> _frequentProducts = [];
 
-  final String logoUrl = "https://lh3.googleusercontent.com/aida/ADBb0uh8CTvSHI_1-5xL4Ew7J-ycSYCb46Rbl2EAWU3AhWrvKJaAa4WwqVqZRdcMcnwBwmOQ_qdNfzXwX0T04Sx2eL-aNI50UTkBZL4pjn6yP9m0eN-nJm-aNtOXefV_VXmd3yPyDOCov9N3siIDOqiYG3A8o8leP_9RDe6ZP_SVF95LPAFV12p2K_hfw_16HkNnsrgoP5hvP2STLjtq8le4Hnj-RXTVr0bZYYfuXVULFQANlsDDyhwIFHTKcsQGm04TGMYTBnj-QcCBLg";
-  final String profileUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBjIB_rkYSsAnFjFrjEDpiI1HKMF2CuQ2iR8jgNnl7hwJbiIYvOucnbbJWDAWcXlTk1UF3hx-N0SgtnPj9hCDYZWyhRlqvOCX8HdfbQCiRNaBgf-jMdqMnDor1wyrjlTf2OAhmStXVsgrPhR8cLqaDJmsy3uhGMWWbhlEo4r7QKzE2O1RF4IB8rwLFRn69_V1Pbqx164OgrzCFHH2b3fpP9ogoe2CsrJSbaXC_hLzULhBz-wSrDe00CgvjPsrV02kQb2J0QX25JFvQ";
+  // Lighter gradient — still dark/red but not pitch-black
+  static const List<Color> _bgGradient = [
+    Color(0xFF1E1E2E), // deep charcoal-blue (not pure black)
+    Color(0xFF2D1010), // muted dark red
+    Color(0xFFB22A1A), // slightly brighter red at bottom
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFrequent();
+  }
+
+  Future<void> _loadFrequent() async {
+    final products = await _apiService.getFrequentProducts();
+    if (mounted) setState(() { _frequentProducts = products; _loadingFrequent = false; });
+  }
 
   Future<void> _searchProduct() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) return;
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-      _productData = null;
-    });
-
+    setState(() { _isSearching = true; _errorMessage = null; _productData = null; });
     final data = await _apiService.getProduct(query);
-    setState(() {
-      _isLoading = false;
-      if (data != null) {
-        _productData = data;
-      } else {
-        _errorMessage = "Product not found or session expired. Please login again.";
-      }
+    if (mounted) setState(() {
+      _isSearching = false;
+      if (data != null) { _productData = data; }
+      else { _errorMessage = 'No product matched "$query". Double-check the code.'; }
     });
   }
 
   Future<void> _scanBarcode() async {
-    var res = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const SimpleBarcodeScannerPage(),
-      ),
-    );
+    var res = await Navigator.push(context, MaterialPageRoute(builder: (context) => const SimpleBarcodeScannerPage()));
     if (res is String && res != '-1') {
       _searchController.text = res;
       _searchProduct();
@@ -58,329 +59,362 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9F9), // surface-bright
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top App Bar
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
-                border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.2))),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: _bgGradient,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildAppBar(),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Image.asset('assets/images/logo.png', height: 32, errorBuilder: (c,e,s) => const Icon(Icons.business)),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'AV & COMPANY',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF091D2E), letterSpacing: -1.0),
-                      ),
+                      _buildTabBar(),
+                      const SizedBox(height: 20),
+                      _buildSearchField(),
+                      const SizedBox(height: 24),
+
+                      if (_isSearching)
+                        const Center(child: CircularProgressIndicator(color: Color(0xFFFF6B6B))).animate().fadeIn(),
+
+                      if (_errorMessage != null)
+                        _buildErrorBanner(_errorMessage!),
+
+                      if (_productData != null) ...[
+                        _buildSectionLabel('SEARCH RESULT', badge: '1 Match Found'),
+                        const SizedBox(height: 12),
+                        _buildProductCard(_productData!, isSearchResult: true),
+                      ],
+
+                      if (_productData == null && !_isSearching && _errorMessage == null) ...[
+                        _buildSectionLabel('FREQUENTLY SEARCHED'),
+                        const SizedBox(height: 12),
+                        _loadingFrequent
+                            ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF6B6B)))
+                            : _frequentProducts.isEmpty
+                                ? Center(child: Text('No products yet', style: TextStyle(color: Colors.white.withOpacity(0.3))))
+                                : Column(
+                                    children: _frequentProducts.asMap().entries.map((entry) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 10),
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            _searchController.text = entry.value['product_code'] ?? '';
+                                            _searchProduct();
+                                          },
+                                          child: _buildProductCard(entry.value, delay: entry.key * 80),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                      ],
+                      const SizedBox(height: 16),
                     ],
                   ),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF9E2016).withOpacity(0.2), width: 2),
-                      image: DecorationImage(
-                        image: NetworkImage(profileUrl),
-                        fit: BoxFit.cover,
-                      )
-                    ),
-                  )
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Tabs
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F4),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE1BFB9).withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)],
-                              ),
-                              alignment: Alignment.center,
-                              child: const Text('Product Code', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF9E2016))),
-                            ),
-                          ),
-                          Expanded(
-                            child: InkWell(
-                              onTap: _scanBarcode,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                alignment: Alignment.center,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Icon(Icons.qr_code_scanner, size: 16, color: Color(0xFF4E6073)),
-                                    SizedBox(width: 8),
-                                    Text('Barcode Scan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF4E6073))),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Search Field
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: const Border(bottom: BorderSide(color: Color(0xFF9E2016), width: 2)),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4)],
-                          ),
-                          child: Row(
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Icon(Icons.search, color: Color(0xFF4E6073)),
-                              ),
-                              Expanded(
-                                child: TextField(
-                                  controller: _searchController,
-                                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Color(0xFF191C1C)),
-                                  decoration: const InputDecoration(
-                                    hintText: 'CF-9021',
-                                    hintStyle: TextStyle(color: Color(0xFFD9DADA)),
-                                    border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(vertical: 16),
-                                  ),
-                                  onSubmitted: (_) => _searchProduct(),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.close, color: Color(0xFF4E6073)),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() {
-                                    _productData = null;
-                                    _errorMessage = null;
-                                  });
-                                },
-                              )
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          top: -8,
-                          left: 12,
-                          child: Container(
-                            color: const Color(0xFFF8F9F9),
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: const Text('ENTRY FIELD', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF9E2016), letterSpacing: 1.5)),
-                          ),
-                        )
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-
-                    if (_isLoading)
-                      const Center(child: CircularProgressIndicator(color: Color(0xFF9E2016))),
-
-                    if (_errorMessage != null)
-                      Center(
-                        child: Text(
-                          _errorMessage!,
-                          style: const TextStyle(color: Colors.redAccent, fontSize: 16),
-                        ),
-                      ).animate().fade().slideY(begin: 0.1),
-
-                    if (_productData != null)
-                      _buildResultCard(_productData!),
-
-                  ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.7),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -5))],
-        ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: BottomNavigationBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              currentIndex: 0,
-              selectedItemColor: const Color(0xFF9E2016),
-              unselectedItemColor: const Color(0xFF4E6073),
-              selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.0),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.0),
-              onTap: (index) {
-                if (index == 1) {
-                  Navigator.pushReplacementNamed(context, '/profile');
-                }
-              },
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.search), label: 'SEARCH'),
-                BottomNavigationBarItem(icon: Icon(Icons.person), label: 'PROFILE'),
-              ],
-            ),
+            ],
           ),
         ),
       ),
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
-  Widget _buildResultCard(Map<String, dynamic> data) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('SEARCH RESULT', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF4E6073), letterSpacing: 1.5)),
+  Widget _buildAppBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFF9E2016).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8)],
               ),
-              child: const Text('1 Match Found', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF9E2016))),
-            )
-          ],
-        ),
-        const SizedBox(height: 16),
-        
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.7),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
-            boxShadow: [BoxShadow(color: const Color(0xFF2C3E50).withOpacity(0.08), blurRadius: 30, offset: const Offset(0, 10))],
+              child: Image.asset('assets/images/logo.png', height: 26, errorBuilder: (c, e, s) => const Icon(Icons.business, size: 26)),
+            ),
+            const SizedBox(width: 12),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('AV & COMPANY', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1.5)),
+                Text('Retail Hub', style: TextStyle(fontSize: 11, color: Colors.white38, letterSpacing: 0.5)),
+              ],
+            ),
+          ]),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFB22A1A).withOpacity(0.25),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFFF6B6B).withOpacity(0.4)),
+            ),
+            child: const Row(children: [
+              Icon(Icons.search_rounded, color: Color(0xFFFF6B6B), size: 14),
+              SizedBox(width: 6),
+              Text('SEARCH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFFF6B6B), letterSpacing: 1.5)),
+            ]),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Column(
+        ],
+      ),
+    ).animate().fadeIn(delay: 100.ms);
+  }
+
+  Widget _buildTabBar() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+          ),
+          child: Row(children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFB22A1A)]),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [BoxShadow(color: const Color(0xFF9E2016).withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))],
+                ),
+                alignment: Alignment.center,
+                child: const Text('Product Code', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+              ),
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: _scanBarcode,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  alignment: Alignment.center,
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.qr_code_scanner, size: 16, color: Colors.white.withOpacity(0.5)),
+                    const SizedBox(width: 6),
+                    Text('Barcode Scan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.5))),
+                  ]),
+                ),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    ).animate().fadeIn(delay: 200.ms);
+  }
+
+  Widget _buildSearchField() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.15)),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 20)],
+          ),
+          child: Row(children: [
+            const Padding(padding: EdgeInsets.all(16.0), child: Icon(Icons.search_rounded, color: Color(0xFFFF6B6B), size: 24)),
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5),
+                decoration: InputDecoration(
+                  hintText: 'e.g. CF-9021',
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 20, fontWeight: FontWeight.w700),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                ),
+                onSubmitted: (_) => _searchProduct(),
+              ),
+            ),
+            if (_searchController.text.isNotEmpty)
+              IconButton(
+                icon: Icon(Icons.close_rounded, color: Colors.white.withOpacity(0.4), size: 20),
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() { _productData = null; _errorMessage = null; });
+                },
+              ),
+            GestureDetector(
+              onTap: _searchProduct,
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFB22A1A)]),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [BoxShadow(color: const Color(0xFF9E2016).withOpacity(0.5), blurRadius: 8, offset: const Offset(0, 3))],
+                ),
+                child: const Text('Go', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.05);
+  }
+
+  Widget _buildSectionLabel(String label, {String? badge}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(children: [
+          Container(width: 3, height: 14, decoration: BoxDecoration(color: const Color(0xFFFF6B6B), borderRadius: BorderRadius.circular(2))),
+          const SizedBox(width: 10),
+          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white.withOpacity(0.45), letterSpacing: 1.5)),
+        ]),
+        if (badge != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF9E2016).withOpacity(0.25),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF9E2016).withOpacity(0.5)),
+            ),
+            child: Text(badge, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFFF6B6B))),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildProductCard(Map<String, dynamic> data, {bool isSearchResult = false, int delay = 0}) {
+    final name = data['name']?.isNotEmpty == true ? data['name'] : data['product_code'] ?? 'Product';
+    final code = data['product_code'] ?? '';
+    final price = data['price']?.toString() ?? '—';
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(isSearchResult ? 0.1 : 0.07),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withOpacity(isSearchResult ? 0.18 : 0.1)),
+            boxShadow: isSearchResult ? [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 8))] : null,
+          ),
+          child: Column(children: [
+            // Top accent bar
+            Container(
+              height: 4,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFFF6B6B)]),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              child: Row(
                 children: [
+                  // Icon
                   Container(
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF9E2016), Color(0xFFC0392B)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF9E2016).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF9E2016).withOpacity(0.3)),
                     ),
+                    child: const Icon(Icons.inventory_2_outlined, color: Color(0xFFFF6B6B), size: 22),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    data['name'] ?? 'Product Name',
-                                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF191C1C), height: 1.2),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Text('SKU: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF4E6073))),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                        decoration: BoxDecoration(color: const Color(0xFFEDEEEE), borderRadius: BorderRadius.circular(4)),
-                                        child: Text(data['code'] ?? 'Unknown', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF191C1C))),
-                                      )
-                                    ],
-                                  )
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(color: const Color(0xFF9E2016).withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
-                              child: const Icon(Icons.inventory_2, color: Color(0xFF9E2016), size: 32),
-                            )
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(color: const Color(0xFFE1BFB9).withOpacity(0.3)),
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4)],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(color: const Color(0xFF9E2016).withOpacity(0.1), shape: BoxShape.circle),
-                                    child: const Icon(Icons.sell, color: Color(0xFF9E2016), size: 16),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  const Text('RETAIL PRICE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF4E6073))),
-                                ],
-                              ),
-                              Text('\$${data['price']}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF191C1C))),
-                            ],
-                          ),
-                        ),
-
-
-                      ],
-                    ),
-                  )
+                  const SizedBox(width: 14),
+                  // Name + code
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                        child: Text(code, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.6), letterSpacing: 0.5)),
+                      ),
+                    ]),
+                  ),
+                  // Price
+                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Text('\$$price', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
+                    Text('RETAIL', style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.3), letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+                  ]),
                 ],
               ),
             ),
+          ]),
+        ),
+      ),
+    ).animate().fade(delay: Duration(milliseconds: delay), duration: 350.ms).slideY(begin: 0.06, delay: Duration(milliseconds: delay));
+  }
+
+  Widget _buildErrorBanner(String msg) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.red.withOpacity(0.2)),
           ),
-        )
-      ],
-    ).animate().fade(duration: 400.ms).slideY(begin: 0.1);
+          child: Row(children: [
+            const Icon(Icons.search_off_rounded, color: Color(0xFFFF6B6B), size: 20),
+            const SizedBox(width: 12),
+            Expanded(child: Text(msg, style: const TextStyle(color: Color(0xFFFF6B6B), fontSize: 13))),
+          ]),
+        ),
+      ),
+    ).animate().fadeIn().shake(hz: 3, offset: const Offset(4, 0));
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E).withOpacity(0.95),
+        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.08))),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, -5))],
+      ),
+      child: BottomNavigationBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        currentIndex: 0,
+        selectedItemColor: const Color(0xFFFF6B6B),
+        unselectedItemColor: Colors.white30,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.0),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 1.0),
+        onTap: (index) {
+          if (index == 1) Navigator.pushReplacementNamed(context, '/profile');
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.search_rounded), label: 'SEARCH'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'PROFILE'),
+        ],
+      ),
+    );
   }
 }

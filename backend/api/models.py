@@ -28,9 +28,10 @@ def save_user_profile(sender, instance, **kwargs):
 
 class Product(models.Model):
     product_code = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=200, blank=True, default='')
     price_1 = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price 1")
     price_2 = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price 2")
     price_3 = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price 3")
 
     def __str__(self):
-        return f"{self.product_code}"
+        return f"{self.name or self.product_code}"

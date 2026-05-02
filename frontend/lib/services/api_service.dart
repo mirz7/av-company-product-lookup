@@ -46,9 +46,27 @@ class ApiService {
           return data[0] as Map<String, dynamic>;
         }
       }
-      return null; // Product not found or error
+      return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getFrequentProducts() async {
+    try {
+      final token = await storage.read(key: 'access_token');
+      if (token == null) return [];
+      final response = await http.get(
+        Uri.parse('$baseUrl/products/frequent/'),
+        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is List) return List<Map<String, dynamic>>.from(data);
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 
