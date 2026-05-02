@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/search_screen.dart';
+import 'screens/profile_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void main() {
@@ -22,22 +23,24 @@ class StaffApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Staff App',
+      title: 'AV & Company Staff App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF00E5FF), // Cyan/Electric Blue
-          surface: Color(0xFF1E293B), // Deep navy
-          background: Color(0xFF0F172A), // Midnight blue
+        brightness: Brightness.light,
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF9E2016), // Stitch Primary Red
+          secondary: Color(0xFF4E6073),
+          surface: Color(0xFFFFFFFF),
+          background: Color(0xFFF8F9F9),
         ),
-        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+        textTheme: GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme),
       ),
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),
         '/search': (context) => const SearchScreen(),
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }

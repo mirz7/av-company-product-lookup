@@ -27,7 +27,7 @@ class ApiService {
     }
   }
 
-  Future<String?> getProductPrice(String code) async {
+  Future<Map<String, dynamic>?> getProduct(String code) async {
     try {
       final token = await storage.read(key: 'access_token');
       if (token == null) return null;
@@ -43,7 +43,7 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data is List && data.isNotEmpty) {
-          return data[0]['price'].toString();
+          return data[0] as Map<String, dynamic>;
         }
       }
       return null; // Product not found or error

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -10,30 +11,13 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _shakeCard = false;
 
-  late AnimationController _gradientController;
-
-  @override
-  void initState() {
-    super.initState();
-    _gradientController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 5),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
-    _gradientController.dispose();
-    super.dispose();
-  }
+  final String logoUrl = "https://lh3.googleusercontent.com/aida/ADBb0uh8CTvSHI_1-5xL4Ew7J-ycSYCb46Rbl2EAWU3AhWrvKJaAa4WwqVqZRdcMcnwBwmOQ_qdNfzXwX0T04Sx2eL-aNI50UTkBZL4pjn6yP9m0eN-nJm-aNtOXefV_VXmd3yPyDOCov9N3siIDOqiYG3A8o8leP_9RDe6ZP_SVF95LPAFV12p2K_hfw_16HkNnsrgoP5hvP2STLjtq8le4Hnj-RXTVr0bZYYfuXVULFQANlsDDyhwIFHTKcsQGm04TGMYTBnj-QcCBLg";
 
   Future<void> _handleLogin() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -64,137 +48,184 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    Widget loginCard = ClipRRect(
+      borderRadius: BorderRadius.circular(32.0),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+        child: Container(
+          padding: const EdgeInsets.all(32.0),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(32.0),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 50,
+                offset: const Offset(0, 20),
+              )
+            ]
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Logo
+              Container(
+                margin: const EdgeInsets.only(bottom: 24),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                    )
+                  ]
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset('assets/images/logo.png', width: 80, height: 80, fit: BoxFit.contain, errorBuilder: (c,e,s) => const Icon(Icons.business, size: 80)),
+                ),
+              ),
+              const Text(
+                'AV & COMPANY',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'WORKFORCE PORTAL',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withOpacity(0.7),
+                  letterSpacing: 2.0,
+                ),
+              ),
+              const SizedBox(height: 32),
+              
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, _) {
+                  if (authProvider.errorMessage != null) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Text(
+                        authProvider.errorMessage!,
+                        style: const TextStyle(color: Colors.redAccent),
+                      ).animate().fade().slideY(begin: -0.2),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }
+              ),
+
+              _buildTextField(
+                controller: _usernameController,
+                label: 'Employee Username',
+                icon: Icons.person,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _passwordController,
+                label: 'Secure Password',
+                icon: Icons.lock,
+                isPassword: true,
+              ),
+              
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: Checkbox(
+                          value: false,
+                          onChanged: (v) {},
+                          fillColor: MaterialStateProperty.all(Colors.white.withOpacity(0.1)),
+                          side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('Remember me', style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.7))),
+                    ],
+                  ),
+                  Text('Forgot Access?', style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.7), decoration: TextDecoration.underline)),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: Consumer<AuthProvider>(
+                  builder: (context, authProvider, _) {
+                    return ElevatedButton(
+                      onPressed: authProvider.isLoading ? null : _handleLogin,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF9E2016),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        elevation: 8,
+                        shadowColor: const Color(0xFF9E2016).withOpacity(0.4),
+                      ),
+                      child: authProvider.isLoading
+                          ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('Login to Workspace', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                    );
+                  }
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (_shakeCard) {
+      loginCard = loginCard.animate(onPlay: (controller) => controller.repeat()).shake(hz: 8, curve: Curves.easeInOutCubic).then(delay: 500.ms);
+    }
+
     return Scaffold(
       body: Stack(
         children: [
-          // Animated Gradient Background
-          AnimatedBuilder(
-            animation: _gradientController,
-            builder: (context, child) {
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color.lerp(const Color(0xFF0F172A), const Color(0xFF1E293B), _gradientController.value)!,
-                      Color.lerp(const Color(0xFF1E293B), const Color(0xFF0F172A), _gradientController.value)!,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-              );
-            },
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF9E2016), Color(0xFF2E3131)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
           ),
-          
           Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Consumer<AuthProvider>(
-                builder: (context, authProvider, child) {
-                  Widget loginCard = Container(
-                    padding: const EdgeInsets.all(32.0),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(24.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                children: [
+                  loginCard.animate().fade(duration: 800.ms).slideY(begin: 0.2, end: 0, duration: 800.ms, curve: Curves.easeOutCubic),
+                  const SizedBox(height: 32),
+                  OutlinedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.fingerprint, color: Colors.white),
+                    label: const Text('Sign in with Biometrics', style: TextStyle(color: Colors.white)),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.white.withOpacity(0.05),
+                      side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Logo / Header
-                        Hero(
-                          tag: 'app_logo',
-                          child: Icon(
-                            Icons.storefront_rounded,
-                            size: 64,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Staff Portal',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        
-                        // Error Message
-                        if (authProvider.errorMessage != null)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: Text(
-                              authProvider.errorMessage!,
-                              style: const TextStyle(color: Colors.redAccent),
-                            ).animate().fade().slideY(begin: -0.2),
-                          ),
-
-                        // Username Field
-                        _buildTextField(
-                          controller: _usernameController,
-                          label: 'Username',
-                          icon: Icons.person_outline,
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Password Field
-                        _buildTextField(
-                          controller: _passwordController,
-                          label: 'Password',
-                          icon: Icons.lock_outline,
-                          isPassword: true,
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Login Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: authProvider.isLoading ? null : _handleLogin,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.primary,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16.0),
-                              ),
-                              elevation: 5,
-                            ),
-                            child: authProvider.isLoading
-                                ? const SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.black,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Login',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (_shakeCard) {
-                    loginCard = loginCard.animate(onPlay: (controller) => controller.repeat()).shake(hz: 8, curve: Curves.easeInOutCubic).then(delay: 500.ms);
-                  }
-
-                  return loginCard.animate().fade(duration: 800.ms).slideY(begin: 0.2, end: 0, duration: 800.ms, curve: Curves.easeOutCubic);
-                },
+                  ).animate().fade(delay: 400.ms),
+                ],
               ),
             ),
           ),
@@ -209,36 +240,40 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     required IconData icon,
     bool isPassword = false,
   }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: isPassword && !_isPasswordVisible,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.grey.shade400),
-        prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
-        suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.grey.shade400,
-                ),
-                onPressed: () {
-                  setState(() => _isPasswordVisible = !_isPasswordVisible);
-                },
-              )
-            : null,
-        filled: true,
-        fillColor: Colors.black.withOpacity(0.2),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.0),
-          borderSide: BorderSide.none,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white.withOpacity(0.8)),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.0),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+        const SizedBox(height: 4),
+        TextFormField(
+          controller: controller,
+          obscureText: isPassword && !_isPasswordVisible,
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, color: Colors.white.withOpacity(0.5)),
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.white.withOpacity(0.5)),
+                    onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                  )
+                : null,
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.1),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: const UnderlineInputBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: const UnderlineInputBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              borderSide: BorderSide(color: Color(0xFF9E2016), width: 2),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
