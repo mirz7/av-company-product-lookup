@@ -157,7 +157,6 @@ class _SearchScreenState extends State<SearchScreen> {
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                             border: const Border(bottom: BorderSide(color: Color(0xFF9E2016), width: 2)),
                             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4)],
                           ),
@@ -371,46 +370,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        const Divider(color: Color(0xFFE1BFB9), height: 1, thickness: 0.3),
-                        const SizedBox(height: 24),
 
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFC0392B)]),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [BoxShadow(color: const Color(0xFF9E2016).withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))],
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: () {},
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  child: const Text('Add to Cart', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: const Color(0xFFE1BFB9).withOpacity(0.5), width: 2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: IconButton(
-                                icon: const Icon(Icons.more_horiz, color: Color(0xFF4E6073)),
-                                onPressed: () {},
-                              ),
-                            )
-                          ],
-                        )
 
                       ],
                     ),

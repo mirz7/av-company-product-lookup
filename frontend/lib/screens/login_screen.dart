@@ -225,6 +225,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
                   ).animate().fade(delay: 400.ms),
+                  const SizedBox(height: 24),
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/register'),
+                    child: const Text(
+                      "Don't have an account? Register",
+                      style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                    ),
+                  ).animate().fade(delay: 600.ms),
                 ],
               ),
             ),

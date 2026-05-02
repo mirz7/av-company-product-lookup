@@ -52,6 +52,72 @@ class ApiService {
     }
   }
 
+  Future<bool> register(String name, String username, String role, String password, String phone, String email) async {
+    try {
+      final parts = name.split(' ');
+      final firstName = parts.isNotEmpty ? parts.first : '';
+      final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+      
+      final response = await http.post(
+        Uri.parse('$baseUrl/register/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': username,
+          'password': password,
+          'email': email,
+          'first_name': firstName,
+          'last_name': lastName,
+          'role': role,
+          'phone_number': phone,
+        }),
+      );
+      if (response.statusCode == 201) return true;
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getProfile() async {
+    try {
+      final token = await storage.read(key: 'access_token');
+      if (token == null) return null;
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/profile/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<bool> updateProfile(Map<String, dynamic> data) async {
+    try {
+      final token = await storage.read(key: 'access_token');
+      if (token == null) return false;
+
+      final response = await http.patch(
+        Uri.parse('$baseUrl/profile/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(data),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await storage.delete(key: 'access_token');
     await storage.delete(key: 'refresh_token');

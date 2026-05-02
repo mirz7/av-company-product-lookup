@@ -11,7 +11,9 @@ class UserProfile(models.Model):
         (3, 'Price Level 3 (Wholesale)'),
     ]
     price_level = models.IntegerField(choices=PRICE_LEVEL_CHOICES, default=1)
-
+    role = models.CharField(max_length=50, default='Sales')
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    profile_photo = models.URLField(max_length=500, blank=True, null=True, default='https://ui-avatars.com/api/?name=User&background=random')
     def __str__(self):
         return f"{self.user.username} - Level {self.price_level}"
 

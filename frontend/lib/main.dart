@@ -4,6 +4,7 @@ import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/register_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void main() {
@@ -39,6 +40,7 @@ class StaffApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
         '/search': (context) => const SearchScreen(),
         '/profile': (context) => const ProfileScreen(),
       },

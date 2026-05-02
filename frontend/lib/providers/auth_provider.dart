@@ -24,4 +24,20 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     return success;
   }
+
+  Future<bool> register(String name, String username, String role, String password, String phone, String email) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final success = await _apiService.register(name, username, role, password, phone, email);
+
+    if (!success) {
+      _errorMessage = 'Registration failed. Username may already exist.';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return success;
+  }
 }
