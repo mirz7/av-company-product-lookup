@@ -11,21 +11,21 @@ class ProductSearchView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        query = self.request.query_params.get('query')
         code = self.request.query_params.get('code')
-        if code:
-            queryset = Product.objects.filter(product_code=code)
-            if not queryset.exists():
-                raise NotFound(detail="Product not found")
+        
+        # Support old frontend parameter 'code' for backward compatibility
+        search_term = query if query else code
+        
+        if search_term:
+            from django.db.models import Q
+            queryset = Product.objects.filter(
+                Q(product_code__icontains=search_term) | Q(name__icontains=search_term)
+            )
             return queryset
-        return Product.objects.none()
-
-class FrequentProductsView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        products = Product.objects.all()[:6]
-        serializer = ProductSerializer(products, many=True, context={'request': request})
-        return Response(serializer.data)
+        
+        # Return initial products (first 20) when no query is provided
+        return Product.objects.all()[:30]
 
 class RegisterUserView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
@@ -37,3 +37,12 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user.profile
+
+class IncrementSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        profile = request.user.profile
+        profile.searches_today += 1
+        profile.save()
+        return Response({'searches_today': profile.searches_today})

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -63,45 +64,43 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeProvider>().isDark;
+
+    final bgColors = isDark
+        ? [AppTheme.darkBg1, AppTheme.darkBg2, const Color(0xFF2A0D0D)]
+        : [AppTheme.lightBg1, AppTheme.lightBg2, const Color(0xFFE8D0C8)];
+
+    final textColor = isDark ? Colors.white : AppTheme.lightText;
+    final subTextColor = isDark ? Colors.white54 : AppTheme.lightSubText;
+    final cardColor = isDark ? Colors.white.withOpacity(0.07) : Colors.white.withOpacity(0.6);
+    final borderColor = isDark ? Colors.white.withOpacity(0.10) : AppTheme.lightBorder;
+
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF2A0D0D) : const Color(0xFFE8D0C8),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF0D0D0D), Color(0xFF1A0505), Color(0xFF9E2016)],
+            colors: bgColors,
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            stops: [0.0, 0.5, 1.0],
+            stops: const [0.0, 0.5, 1.0],
           ),
         ),
         child: Stack(
+          clipBehavior: Clip.hardEdge,
           children: [
-            // Decorative glowing orbs
+            // Decorative glowing orb — top right (clipped)
             Positioned(
-              top: -80,
-              right: -60,
+              top: 0,
+              right: -40,
               child: AnimatedBuilder(
                 animation: _pulseController,
                 builder: (_, __) => Container(
-                  width: 250,
-                  height: 250,
+                  width: 200,
+                  height: 200,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFF9E2016).withOpacity(0.08 + _pulseController.value * 0.06),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: -100,
-              left: -80,
-              child: AnimatedBuilder(
-                animation: _pulseController,
-                builder: (_, __) => Container(
-                  width: 300,
-                  height: 300,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFF9E2016).withOpacity(0.05 + _pulseController.value * 0.04),
+                    color: AppTheme.crimson.withOpacity(0.07 + _pulseController.value * 0.05),
                   ),
                 ),
               ),
@@ -112,8 +111,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 key: _formKey,
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: MediaQuery.of(context).size.height -
+                          MediaQuery.of(context).padding.top -
+                          MediaQuery.of(context).padding.bottom,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 32),
 
@@ -122,35 +129,36 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         child: Column(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(28),
+                                borderRadius: BorderRadius.circular(24),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF9E2016).withOpacity(0.4),
+                                    color: AppTheme.crimson.withOpacity(0.4),
                                     blurRadius: 40,
                                     offset: const Offset(0, 12),
                                   ),
                                 ],
                               ),
-                              child: Image.asset(
-                                'assets/images/logo.png',
-                                width: 72,
-                                height: 72,
-                                fit: BoxFit.contain,
-                                errorBuilder: (c, e, s) => const Icon(Icons.business, size: 72, color: Color(0xFF9E2016)),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Image.asset(
+                                  'assets/images/logo.png',
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (c, e, s) => const Icon(Icons.business, size: 100, color: AppTheme.crimson),
+                                ),
                               ),
                             ).animate().scale(delay: 100.ms, duration: 500.ms, curve: Curves.easeOutBack),
                             const SizedBox(height: 20),
-                            const Text(
-                              'AV & COMPANY',
-                              style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 2.5),
+                            Text(
+                              'AV & Company',
+                              style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 2.5),
                             ).animate().fadeIn(delay: 200.ms),
                             const SizedBox(height: 6),
                             Text(
                               'WORKFORCE PORTAL',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.45), letterSpacing: 3.0),
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: subTextColor, letterSpacing: 3.0),
                             ).animate().fadeIn(delay: 300.ms),
                           ],
                         ),
@@ -159,14 +167,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       const SizedBox(height: 48),
 
                       // Welcome text
-                      const Text(
+                      Text(
                         'Welcome back',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: textColor),
                       ).animate().fadeIn(delay: 350.ms).slideX(begin: -0.05),
                       const SizedBox(height: 4),
                       Text(
                         'Sign in to access your workspace',
-                        style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.45)),
+                        style: TextStyle(fontSize: 13, color: subTextColor),
                       ).animate().fadeIn(delay: 400.ms),
 
                       const SizedBox(height: 28),
@@ -187,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               children: [
                                 const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
                                 const SizedBox(width: 10),
-                                Expanded(child: Text(auth.errorMessage!, style: const TextStyle(color: Color(0xFFFF6B6B), fontSize: 13))),
+                                Expanded(child: Text(auth.errorMessage!, style: const TextStyle(color: AppTheme.crimsonGlow, fontSize: 13))),
                               ],
                             ),
                           ).animate().fadeIn().shake();
@@ -201,12 +209,23 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         hint: 'Enter your username',
                         icon: Icons.alternate_email_rounded,
                         validator: (v) => (v == null || v.trim().isEmpty) ? 'Username is required' : null,
+                        isDark: isDark,
+                        cardColor: cardColor,
+                        borderColor: borderColor,
+                        textColor: textColor,
+                        subTextColor: subTextColor,
                       ).animate().fadeIn(delay: 450.ms).slideX(begin: -0.05),
 
                       const SizedBox(height: 16),
 
                       // Password field
-                      _buildPasswordField().animate().fadeIn(delay: 500.ms).slideX(begin: -0.05),
+                      _buildPasswordField(
+                        isDark: isDark,
+                        cardColor: cardColor,
+                        borderColor: borderColor,
+                        textColor: textColor,
+                        subTextColor: subTextColor,
+                      ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.05),
 
                       const SizedBox(height: 16),
 
@@ -223,20 +242,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   width: 20,
                                   height: 20,
                                   decoration: BoxDecoration(
-                                    color: _rememberMe ? const Color(0xFF9E2016) : Colors.transparent,
+                                    color: _rememberMe ? AppTheme.crimson : Colors.transparent,
                                     borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: _rememberMe ? const Color(0xFF9E2016) : Colors.white.withOpacity(0.3), width: 1.5),
+                                    border: Border.all(color: _rememberMe ? AppTheme.crimson : subTextColor.withOpacity(0.4), width: 1.5),
                                   ),
                                   child: _rememberMe ? const Icon(Icons.check, color: Colors.white, size: 13) : null,
                                 ),
                                 const SizedBox(width: 8),
-                                Text('Remember me', style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.6))),
+                                Text('Remember me', style: TextStyle(fontSize: 13, color: subTextColor)),
                               ],
                             ),
                           ),
                           Text(
                             'Forgot password?',
-                            style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.55), decoration: TextDecoration.underline, decorationColor: Colors.white30),
+                            style: TextStyle(fontSize: 13, color: subTextColor, decoration: TextDecoration.underline, decorationColor: subTextColor.withOpacity(0.3)),
                           ),
                         ],
                       ).animate().fadeIn(delay: 550.ms),
@@ -251,11 +270,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           child: ElevatedButton(
                             onPressed: auth.isLoading ? null : _handleLogin,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF9E2016),
+                              backgroundColor: AppTheme.crimson,
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor: const Color(0xFF9E2016).withOpacity(0.5),
+                              disabledBackgroundColor: AppTheme.crimson.withOpacity(0.5),
                               elevation: 16,
-                              shadowColor: const Color(0xFF9E2016).withOpacity(0.6),
+                              shadowColor: AppTheme.crimson.withOpacity(0.6),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             ),
                             child: auth.isLoading
@@ -272,40 +291,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         ),
                       ).animate().fadeIn(delay: 600.ms),
 
-                      const SizedBox(height: 20),
-
-                      // Divider
-                      Row(
-                        children: [
-                          Expanded(child: Divider(color: Colors.white.withOpacity(0.1), thickness: 1)),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('OR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white.withOpacity(0.3), letterSpacing: 2)),
-                          ),
-                          Expanded(child: Divider(color: Colors.white.withOpacity(0.1), thickness: 1)),
-                        ],
-                      ).animate().fadeIn(delay: 650.ms),
-
-                      const SizedBox(height: 20),
-
-                      // Biometrics button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: OutlinedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.fingerprint_rounded, size: 22),
-                          label: const Text('Sign in with Biometrics', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white70,
-                            side: BorderSide(color: Colors.white.withOpacity(0.15), width: 1.5),
-                            backgroundColor: Colors.white.withOpacity(0.04),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                        ),
-                      ).animate().fadeIn(delay: 700.ms),
-
                       const SizedBox(height: 32),
+
 
                       // Register link
                       Center(
@@ -314,11 +301,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           child: RichText(
                             text: TextSpan(
                               text: "Don't have an account? ",
-                              style: TextStyle(color: Colors.white.withOpacity(0.45), fontSize: 13),
+                              style: TextStyle(color: subTextColor, fontSize: 13),
                               children: const [
                                 TextSpan(
                                   text: 'Register Now',
-                                  style: TextStyle(color: Color(0xFFFF6B6B), fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                                  style: TextStyle(color: AppTheme.crimsonGlow, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
                                 ),
                               ],
                             ),
@@ -328,6 +315,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                       const SizedBox(height: 24),
                     ],
+                  ),
+                    ),
                   ),
                 ),
               ),
@@ -343,13 +332,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     required String label,
     required String hint,
     required IconData icon,
+    required bool isDark,
+    required Color cardColor,
+    required Color borderColor,
+    required Color textColor,
+    required Color subTextColor,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70, letterSpacing: 0.3)),
+        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: subTextColor, letterSpacing: 0.3)),
         const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
@@ -359,20 +353,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               controller: controller,
               keyboardType: keyboardType,
               validator: validator,
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+              style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w500),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 14),
-                prefixIcon: Icon(icon, color: const Color(0xFF9E2016), size: 20),
+                hintStyle: TextStyle(color: subTextColor.withOpacity(0.5), fontSize: 14),
+                prefixIcon: Icon(icon, color: AppTheme.crimson, size: 20),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.07),
+                fillColor: cardColor,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF9E2016), width: 1.5)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.crimson, width: 1.5)),
                 errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Colors.redAccent, width: 1)),
                 focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Colors.redAccent, width: 1.5)),
-                errorStyle: const TextStyle(color: Color(0xFFFF6B6B), fontSize: 11),
+                errorStyle: const TextStyle(color: AppTheme.crimsonGlow, fontSize: 11),
               ),
             ),
           ),
@@ -381,11 +375,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField({
+    required bool isDark,
+    required Color cardColor,
+    required Color borderColor,
+    required Color textColor,
+    required Color subTextColor,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Password', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70, letterSpacing: 0.3)),
+        Text('Password', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: subTextColor, letterSpacing: 0.3)),
         const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
@@ -395,24 +395,24 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               controller: _passwordController,
               obscureText: !_passwordVisible,
               validator: (v) => (v == null || v.isEmpty) ? 'Password is required' : null,
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+              style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w500),
               decoration: InputDecoration(
                 hintText: 'Enter your password',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 14),
-                prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF9E2016), size: 20),
+                hintStyle: TextStyle(color: subTextColor.withOpacity(0.5), fontSize: 14),
+                prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppTheme.crimson, size: 20),
                 suffixIcon: IconButton(
-                  icon: Icon(_passwordVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.white38, size: 20),
+                  icon: Icon(_passwordVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: isDark ? Colors.white70 : subTextColor, size: 20),
                   onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
                 ),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.07),
+                fillColor: cardColor,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF9E2016), width: 1.5)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.crimson, width: 1.5)),
                 errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Colors.redAccent, width: 1)),
                 focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Colors.redAccent, width: 1.5)),
-                errorStyle: const TextStyle(color: Color(0xFFFF6B6B), fontSize: 11),
+                errorStyle: const TextStyle(color: AppTheme.crimsonGlow, fontSize: 11),
               ),
             ),
           ),

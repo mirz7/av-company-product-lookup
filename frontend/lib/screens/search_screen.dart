@@ -1,8 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:simple_barcode_scanner/simple_barcode_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
+import '../providers/theme_provider.dart';
+import 'profile_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -15,45 +18,74 @@ class _SearchScreenState extends State<SearchScreen> {
   final _searchController = TextEditingController();
   final ApiService _apiService = ApiService();
   bool _isSearching = false;
-  bool _loadingFrequent = true;
-  Map<String, dynamic>? _productData;
+  bool _isCameraMode = false;
+  MobileScannerController? _cameraController;
+  List<Map<String, dynamic>>? _products;
   String? _errorMessage;
-  List<Map<String, dynamic>> _frequentProducts = [];
-
-  // Lighter gradient — still dark/red but not pitch-black
-  static const List<Color> _bgGradient = [
-    Color(0xFF1E1E2E), // deep charcoal-blue (not pure black)
-    Color(0xFF2D1010), // muted dark red
-    Color(0xFFB22A1A), // slightly brighter red at bottom
-  ];
+  int _totalProductsInDb = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadFrequent();
+    _loadInitialProducts();
+    _fetchTotalProducts();
   }
 
-  Future<void> _loadFrequent() async {
-    final products = await _apiService.getFrequentProducts();
-    if (mounted) setState(() { _frequentProducts = products; _loadingFrequent = false; });
+  Future<void> _fetchTotalProducts() async {
+    final profile = await _apiService.getProfile();
+    if (mounted && profile != null) {
+      setState(() {
+        _totalProductsInDb = profile['total_products'] ?? 0;
+      });
+    }
+  }
+
+  Future<void> _loadInitialProducts() async {
+    setState(() { _isSearching = true; });
+    final data = await _apiService.searchProducts("");
+    if (mounted) setState(() {
+      _isSearching = false;
+      _products = data;
+    });
   }
 
   Future<void> _searchProduct() async {
     final query = _searchController.text.trim();
-    if (query.isEmpty) return;
-    setState(() { _isSearching = true; _errorMessage = null; _productData = null; });
-    final data = await _apiService.getProduct(query);
+    if (query.isEmpty) {
+      _loadInitialProducts();
+      return;
+    }
+    
+    // Background increment for searches today
+    _apiService.incrementSearchCount();
+    
+    setState(() { _isSearching = true; _errorMessage = null; _products = null; });
+    final data = await _apiService.searchProducts(query);
     if (mounted) setState(() {
       _isSearching = false;
-      if (data != null) { _productData = data; }
-      else { _errorMessage = 'No product matched "$query". Double-check the code.'; }
+      if (data != null && data.isNotEmpty) { _products = data; }
+      else { _errorMessage = 'No products matched "$query".'; }
     });
   }
 
-  Future<void> _scanBarcode() async {
-    var res = await Navigator.push(context, MaterialPageRoute(builder: (context) => const SimpleBarcodeScannerPage()));
-    if (res is String && res != '-1') {
-      _searchController.text = res;
+  Future<void> _scanBarcode() async {}
+
+  void _activateCameraMode() {
+    setState(() { _isCameraMode = true; });
+    _cameraController = MobileScannerController();
+  }
+
+  void _deactivateCameraMode() {
+    _cameraController?.dispose();
+    _cameraController = null;
+    setState(() { _isCameraMode = false; });
+  }
+
+  void _onBarcodeDetected(BarcodeCapture capture) {
+    final rawValue = capture.barcodes.first.rawValue;
+    if (rawValue != null && rawValue.isNotEmpty) {
+      _deactivateCameraMode();
+      _searchController.text = rawValue;
       _searchProduct();
     }
   }
@@ -61,19 +93,26 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _cameraController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeProvider>().isDark;
+    final bgColors = isDark
+        ? [AppTheme.darkSurface, AppTheme.darkBg2, const Color(0xFF2A0D0D)]
+        : [AppTheme.lightBg1, AppTheme.lightBg2, const Color(0xFFEAD4CC)];
+
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF2A0D0D) : const Color(0xFFEAD4CC),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: _bgGradient,
+            colors: bgColors,
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            stops: [0.0, 0.5, 1.0],
+            stops: const [0.0, 0.65, 1.0],
           ),
         ),
         child: SafeArea(
@@ -97,33 +136,23 @@ class _SearchScreenState extends State<SearchScreen> {
                       if (_errorMessage != null)
                         _buildErrorBanner(_errorMessage!),
 
-                      if (_productData != null) ...[
-                        _buildSectionLabel('SEARCH RESULT', badge: '1 Match Found'),
+                      if (_products != null && _products!.isNotEmpty) ...[
+                        _buildSectionLabel(
+                          _searchController.text.isEmpty ? 'PRODUCTS' : 'SEARCH RESULTS', 
+                          badge: _searchController.text.isEmpty 
+                              ? (_totalProductsInDb > 0 ? '$_totalProductsInDb Total' : '${_products!.length} Found')
+                              : '${_products!.length} Found'
+                        ),
                         const SizedBox(height: 12),
-                        _buildProductCard(_productData!, isSearchResult: true),
-                      ],
-
-                      if (_productData == null && !_isSearching && _errorMessage == null) ...[
-                        _buildSectionLabel('FREQUENTLY SEARCHED'),
-                        const SizedBox(height: 12),
-                        _loadingFrequent
-                            ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF6B6B)))
-                            : _frequentProducts.isEmpty
-                                ? Center(child: Text('No products yet', style: TextStyle(color: Colors.white.withOpacity(0.3))))
-                                : Column(
-                                    children: _frequentProducts.asMap().entries.map((entry) {
-                                      return Padding(
-                                        padding: const EdgeInsets.only(bottom: 10),
-                                        child: GestureDetector(
-                                          onTap: () {
-                                            _searchController.text = entry.value['product_code'] ?? '';
-                                            _searchProduct();
-                                          },
-                                          child: _buildProductCard(entry.value, delay: entry.key * 80),
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _products!.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            return _buildProductCard(_products![index], isSearchResult: _searchController.text.isNotEmpty, delay: index * 50);
+                          },
+                        ),
                       ],
                       const SizedBox(height: 16),
                     ],
@@ -139,6 +168,9 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildAppBar() {
+    final isDark = context.read<ThemeProvider>().isDark;
+    final textColor = isDark ? Colors.white : AppTheme.lightText;
+    final subTextColor = isDark ? Colors.white54 : AppTheme.lightSubText;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
@@ -146,20 +178,21 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           Row(children: [
             Container(
-              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8)],
               ),
-              child: Image.asset('assets/images/logo.png', height: 26, errorBuilder: (c, e, s) => const Icon(Icons.business, size: 26)),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset('assets/images/logo.png', height: 38, width: 38, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.business, size: 38, color: Color(0xFF9E2016))),
+              ),
             ),
             const SizedBox(width: 12),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('AV & COMPANY', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1.5)),
-                Text('Retail Hub', style: TextStyle(fontSize: 11, color: Colors.white38, letterSpacing: 0.5)),
+                Text('AV & Company', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 1.5)),
+                Text('Retail Hub', style: TextStyle(fontSize: 11, color: subTextColor, letterSpacing: 0.5)),
               ],
             ),
           ]),
@@ -182,6 +215,8 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildTabBar() {
+    final isDark = context.read<ThemeProvider>().isDark;
+    final borderColor = isDark ? Colors.white.withOpacity(0.1) : AppTheme.lightBorder;
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
@@ -194,28 +229,42 @@ class _SearchScreenState extends State<SearchScreen> {
             border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
           child: Row(children: [
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFB22A1A)]),
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [BoxShadow(color: const Color(0xFF9E2016).withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))],
-                ),
-                alignment: Alignment.center,
-                child: const Text('Product Code', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
-              ),
-            ),
+            // Product Code tab
             Expanded(
               child: GestureDetector(
-                onTap: _scanBarcode,
-                child: Container(
+                onTap: _isCameraMode ? _deactivateCameraMode : null,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
                   padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: !_isCameraMode ? const LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFB22A1A)]) : null,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: !_isCameraMode ? [BoxShadow(color: const Color(0xFF9E2016).withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))] : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text('Product Code', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: !_isCameraMode ? Colors.white : (isDark ? Colors.white.withOpacity(0.45) : AppTheme.silverDark))),
+                ),
+              ),
+            ),
+            // Barcode Scan tab
+            Expanded(
+              child: GestureDetector(
+                onTap: _isCameraMode ? null : _activateCameraMode,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: _isCameraMode ? const LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFB22A1A)]) : null,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: _isCameraMode ? [BoxShadow(color: const Color(0xFF9E2016).withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))] : null,
+                  ),
                   alignment: Alignment.center,
                   child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.qr_code_scanner, size: 16, color: Colors.white.withOpacity(0.5)),
+                    Icon(Icons.qr_code_scanner, size: 16, color: _isCameraMode ? Colors.white : (isDark ? Colors.white.withOpacity(0.5) : AppTheme.silverDark)),
                     const SizedBox(width: 6),
-                    Text('Barcode Scan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.5))),
+                    Text('Barcode Scan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _isCameraMode ? Colors.white : (isDark ? Colors.white.withOpacity(0.5) : AppTheme.silverDark))),
                   ]),
                 ),
               ),
@@ -227,6 +276,105 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSearchField() {
+    final isDark = context.read<ThemeProvider>().isDark;
+    final textColor = isDark ? Colors.white : AppTheme.lightText;
+    final subTextColor = isDark ? Colors.white54 : AppTheme.lightSubText;
+    final borderColor = isDark ? Colors.white.withOpacity(0.15) : AppTheme.lightBorder;
+    if (_isCameraMode) {
+      // Inline camera view for barcode scanning
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        height: 260,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              // Camera feed
+              MobileScanner(
+                controller: _cameraController!,
+                onDetect: _onBarcodeDetected,
+              ),
+              // Scan overlay
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.black.withOpacity(0.4), Colors.transparent, Colors.black.withOpacity(0.4)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+              // Scan target box - 85% width
+              Positioned.fill(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final boxW = constraints.maxWidth * 0.85;
+                    final boxH = boxW * 0.48;
+                    return Center(
+                      child: Container(
+                        width: boxW,
+                        height: boxH,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFFF6B6B), width: 2.5),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned(top: -1, left: -1, child: _cornerAccent()),
+                            Positioned(top: -1, right: -1, child: Transform.rotate(angle: 1.5708, child: _cornerAccent())),
+                            Positioned(bottom: -1, left: -1, child: Transform.rotate(angle: -1.5708, child: _cornerAccent())),
+                            Positioned(bottom: -1, right: -1, child: Transform.rotate(angle: 3.1416, child: _cornerAccent())),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              // Scanning line - proportionate
+              Positioned.fill(
+                child: LayoutBuilder(
+                  builder: (context, constraints) => Center(
+                    child: SizedBox(
+                      width: constraints.maxWidth * 0.85,
+                      child: const _ScanLine(),
+                    ),
+                  ),
+                ),
+              ),
+              // Instructions
+              Positioned(
+                bottom: 24,
+                left: 0,
+                right: 0,
+                child: Text(
+                  'Point at a barcode to scan',
+                  style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13, fontWeight: FontWeight.w600),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              // Top label
+              Positioned(
+                top: 12,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.qr_code_scanner, color: const Color(0xFFFF6B6B), size: 16),
+                    const SizedBox(width: 6),
+                    const Text('SCANNER ACTIVE', style: TextStyle(color: Color(0xFFFF6B6B), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ).animate().fadeIn(duration: 350.ms).slideY(begin: -0.05);
+    }
+
+    // Default text input
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -243,10 +391,10 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: TextField(
                 controller: _searchController,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textColor, letterSpacing: 0.5),
                 decoration: InputDecoration(
-                  hintText: 'e.g. CF-9021',
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 20, fontWeight: FontWeight.w700),
+                  hintText: 'Search by name or code...',
+                  hintStyle: TextStyle(color: subTextColor.withOpacity(0.45), fontSize: 17, fontWeight: FontWeight.w700),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 18),
                 ),
@@ -255,10 +403,11 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             if (_searchController.text.isNotEmpty)
               IconButton(
-                icon: Icon(Icons.close_rounded, color: Colors.white.withOpacity(0.4), size: 20),
+                icon: Icon(Icons.close_rounded, color: subTextColor, size: 20),
                 onPressed: () {
                   _searchController.clear();
-                  setState(() { _productData = null; _errorMessage = null; });
+                  setState(() { _errorMessage = null; });
+                  _loadInitialProducts();
                 },
               ),
             GestureDetector(
@@ -271,7 +420,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [BoxShadow(color: const Color(0xFF9E2016).withOpacity(0.5), blurRadius: 8, offset: const Offset(0, 3))],
                 ),
-                child: const Text('Go', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                child: Text('Go', style: TextStyle(color: isDark ? Colors.white : AppTheme.lightText, fontWeight: FontWeight.bold, fontSize: 14)),
               ),
             ),
           ]),
@@ -280,14 +429,30 @@ class _SearchScreenState extends State<SearchScreen> {
     ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.05);
   }
 
+  Widget _cornerAccent() {
+    return Container(
+      width: 18,
+      height: 18,
+      decoration: const BoxDecoration(
+        border: Border(
+          top: BorderSide(color: Color(0xFFFF6B6B), width: 3),
+          left: BorderSide(color: Color(0xFFFF6B6B), width: 3),
+        ),
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(4)),
+      ),
+    );
+  }
+
   Widget _buildSectionLabel(String label, {String? badge}) {
+    final isDark = context.read<ThemeProvider>().isDark;
+    final subTextColor = isDark ? Colors.white54 : AppTheme.lightSubText;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(children: [
           Container(width: 3, height: 14, decoration: BoxDecoration(color: const Color(0xFFFF6B6B), borderRadius: BorderRadius.circular(2))),
           const SizedBox(width: 10),
-          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white.withOpacity(0.45), letterSpacing: 1.5)),
+          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: subTextColor, letterSpacing: 1.5)),
         ]),
         if (badge != null)
           Container(
@@ -304,9 +469,16 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildProductCard(Map<String, dynamic> data, {bool isSearchResult = false, int delay = 0}) {
+    final isDark = context.read<ThemeProvider>().isDark;
+    final textColor = isDark ? Colors.white : AppTheme.lightText;
+    final subTextColor = isDark ? Colors.white54 : AppTheme.lightSubText;
     final name = data['name']?.isNotEmpty == true ? data['name'] : data['product_code'] ?? 'Product';
     final code = data['product_code'] ?? '';
     final price = data['price']?.toString() ?? '—';
+    final costPrice = data['cost_price']?.toString() ?? '—';
+    final priceA = data['price_1']?.toString() ?? '—';
+    final priceB = data['price_2']?.toString() ?? '—';
+    final priceC = data['price_3']?.toString() ?? '—';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
@@ -314,22 +486,22 @@ class _SearchScreenState extends State<SearchScreen> {
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(isSearchResult ? 0.1 : 0.07),
+            color: isDark ? Colors.white.withOpacity(isSearchResult ? 0.1 : 0.07) : Colors.white.withOpacity(isSearchResult ? 0.92 : 0.8),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withOpacity(isSearchResult ? 0.18 : 0.1)),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(isSearchResult ? 0.18 : 0.1) : AppTheme.lightBorder),
             boxShadow: isSearchResult ? [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 8))] : null,
           ),
           child: Column(children: [
             // Top accent bar
             Container(
               height: 4,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFFF6B6B)]),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFFF6B6B)]),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              padding: const EdgeInsets.only(left: 18, right: 18, top: 14, bottom: 10),
               child: Row(
                 children: [
                   // Icon
@@ -347,7 +519,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   // Name + code
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor), maxLines: 1, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -358,16 +530,45 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   // Price
                   Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text('\$$price', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
-                    Text('RETAIL', style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.3), letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+                    Text('₹$price', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: textColor)),
+                    Text('YOUR PRICE', style: TextStyle(fontSize: 9, color: subTextColor, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
                   ]),
+                ],
+              ),
+            ),
+            // Divider
+            Container(height: 1, color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.lightBorder),
+            // Multiple Prices Row
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildPriceItem('Cost', costPrice),
+                  _buildPriceItem('Price A', priceA),
+                  _buildPriceItem('Price B', priceB),
+                  _buildPriceItem('Price C', priceC),
                 ],
               ),
             ),
           ]),
         ),
       ),
-    ).animate().fade(delay: Duration(milliseconds: delay), duration: 350.ms).slideY(begin: 0.06, delay: Duration(milliseconds: delay));
+    ).animate().fade(delay: Duration(milliseconds: delay > 500 ? 500 : delay), duration: 350.ms).slideY(begin: 0.06, delay: Duration(milliseconds: delay > 500 ? 500 : delay));
+  }
+
+  Widget _buildPriceItem(String label, String value) {
+    final isDark = context.read<ThemeProvider>().isDark;
+    final textColor = isDark ? Colors.white : AppTheme.lightText;
+    final subTextColor = isDark ? Colors.white54 : AppTheme.lightSubText;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: subTextColor, letterSpacing: 1.0)),
+        const SizedBox(height: 2),
+        Text('₹$value', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textColor)),
+      ],
+    );
   }
 
   Widget _buildErrorBanner(String msg) {
@@ -393,27 +594,115 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildBottomNav() {
+    final isDark = context.read<ThemeProvider>().isDark;
+    final navBg = isDark ? const Color(0xFF12121F) : AppTheme.lightSurface;
+    final borderColor = isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBorder;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E).withOpacity(0.95),
-        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.08))),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, -5))],
+        color: navBg,
+        border: Border(top: BorderSide(color: borderColor)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.4 : 0.1), blurRadius: 20, offset: const Offset(0, -4))],
       ),
-      child: BottomNavigationBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        currentIndex: 0,
-        selectedItemColor: const Color(0xFFFF6B6B),
-        unselectedItemColor: Colors.white30,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.0),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 1.0),
-        onTap: (index) {
-          if (index == 1) Navigator.pushReplacementNamed(context, '/profile');
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.search_rounded), label: 'SEARCH'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'PROFILE'),
+      padding: const EdgeInsets.only(bottom: 8, top: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: _navItem(
+              icon: Icons.search_rounded,
+              label: 'SEARCH',
+              isActive: true,
+              onTap: () {},
+              isDark: isDark,
+            ),
+          ),
+          Expanded(
+            child: _navItem(
+              icon: Icons.person_rounded,
+              label: 'MY SPACE',
+              isActive: false,
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => const ProfileScreen(),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              },
+              isDark: isDark,
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _navItem({required IconData icon, required String label, required bool isActive, required VoidCallback onTap, required bool isDark}) {
+    final color = isActive ? AppTheme.crimsonGlow : (isDark ? Colors.white38 : AppTheme.silverDark);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            decoration: BoxDecoration(
+              color: isActive ? AppTheme.crimsonGlow.withOpacity(0.15) : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(height: 2),
+          Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color, letterSpacing: 1.2)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Animated horizontal scanning line for the barcode camera view
+class _ScanLine extends StatefulWidget {
+  const _ScanLine();
+
+  @override
+  State<_ScanLine> createState() => _ScanLineState();
+}
+
+class _ScanLineState extends State<_ScanLine> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
+    _animation = Tween<double>(begin: -55, end: 55).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) => Transform.translate(
+        offset: Offset(0, _animation.value),
+        child: Container(
+          height: 2,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.transparent, const Color(0xFFFF6B6B).withOpacity(0.8), Colors.transparent],
+            ),
+            borderRadius: BorderRadius.circular(1),
+            boxShadow: [BoxShadow(color: const Color(0xFFFF6B6B).withOpacity(0.6), blurRadius: 6)],
+          ),
+        ),
       ),
     );
   }

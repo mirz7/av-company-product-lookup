@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart';
+import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/profile_screen.dart';
@@ -12,6 +14,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const StaffApp(),
     ),
@@ -21,25 +24,53 @@ void main() {
 class StaffApp extends StatelessWidget {
   const StaffApp({super.key});
 
+  TextTheme _buildTextTheme(TextTheme base) =>
+      GoogleFonts.poppinsTextTheme(base);
+
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+
+    final darkTheme = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: const ColorScheme.dark(
+        primary: Color(0xFF9E2016),
+        secondary: Color(0xFF8B9BAE),
+        surface: Color(0xFF1E1E2E),
+        background: Color(0xFF0F0F1A),
+        onPrimary: Colors.white,
+        onSurface: Colors.white,
+      ),
+      scaffoldBackgroundColor: const Color(0xFF0F0F1A),
+      textTheme: _buildTextTheme(ThemeData.dark().textTheme),
+    );
+
+    final lightTheme = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      colorScheme: const ColorScheme.light(
+        primary: Color(0xFF9E2016),
+        secondary: Color(0xFF5A6A78),
+        surface: Color(0xFFFFFFFF),
+        background: Color(0xFFF5F0EB),
+        onPrimary: Colors.white,
+        onSurface: Color(0xFF1A0A08),
+      ),
+      scaffoldBackgroundColor: const Color(0xFFF5F0EB),
+      textTheme: _buildTextTheme(ThemeData.light().textTheme),
+    );
+
     return MaterialApp(
       title: 'AV & Company Staff App',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFF9E2016), // Stitch Primary Red
-          secondary: Color(0xFF4E6073),
-          surface: Color(0xFFFFFFFF),
-          background: Color(0xFFF8F9F9),
-        ),
-        textTheme: GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme),
-      ),
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: themeProvider.themeMode,
       initialRoute: '/',
       routes: {
-        '/': (context) => const LoginScreen(),
+        '/': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/search': (context) => const SearchScreen(),
         '/profile': (context) => const ProfileScreen(),

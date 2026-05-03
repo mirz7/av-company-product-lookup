@@ -13,7 +13,9 @@ class UserProfile(models.Model):
     price_level = models.IntegerField(choices=PRICE_LEVEL_CHOICES, default=1)
     role = models.CharField(max_length=50, default='Sales')
     phone_number = models.CharField(max_length=20, blank=True, null=True)
-    profile_photo = models.URLField(max_length=500, blank=True, null=True, default='https://ui-avatars.com/api/?name=User&background=random')
+    profile_photo = models.ImageField(upload_to='profiles/', blank=True, null=True)
+    searches_today = models.IntegerField(default=0)
+    hours_logged = models.DecimalField(max_digits=5, decimal_places=1, default=0.0)
     def __str__(self):
         return f"{self.user.username} - Level {self.price_level}"
 
@@ -27,11 +29,16 @@ def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
 
 class Product(models.Model):
-    product_code = models.CharField(max_length=100, unique=True)
-    name = models.CharField(max_length=200, blank=True, default='')
-    price_1 = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price 1")
-    price_2 = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price 2")
-    price_3 = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price 3")
+    product_code = models.CharField(max_length=100, unique=True, db_column='item_code')
+    name = models.CharField(max_length=200, blank=True, default='', db_column='item_name')
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Cost Price", db_column='cost_price')
+    price_1 = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price 1", db_column='price_a')
+    price_2 = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price 2", db_column='price_b')
+    price_3 = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price 3", db_column='price_c')
+
+    class Meta:
+        db_table = 'products'
+        managed = False
 
     def __str__(self):
         return f"{self.name or self.product_code}"

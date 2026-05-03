@@ -6,7 +6,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['product_code', 'name', 'price']
+        fields = ['product_code', 'name', 'price', 'cost_price', 'price_1', 'price_2', 'price_3']
 
     def get_price(self, obj):
         # Get the requested user
@@ -35,9 +35,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.CharField(source='user.email', read_only=True)
 
+    total_products = serializers.SerializerMethodField()
+
     class Meta:
         model = UserProfile
-        fields = ['username', 'first_name', 'last_name', 'email', 'role', 'phone_number', 'profile_photo', 'price_level']
+        fields = ['username', 'first_name', 'last_name', 'email', 'role', 'phone_number', 'profile_photo', 'price_level', 'searches_today', 'hours_logged', 'total_products']
+
+    def get_total_products(self, obj):
+        from .models import Product
+        return Product.objects.count()
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

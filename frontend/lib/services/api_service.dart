@@ -4,8 +4,15 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   // Use the PC's local IP address so the physical Android device can connect over Wi-Fi
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  static const String baseUrl = 'http://192.168.1.5:8000/api';
   final storage = const FlutterSecureStorage();
+
+  // ── In-memory product cache ──────────────────────────────────────────────
+  // Populated on first successful fetch; persists for the app session.
+  static List<Map<String, dynamic>>? _allProductsCache;
+
+  /// Call this to clear the cache (e.g. after logout).
+  static void clearProductCache() => _allProductsCache = null;
 
   Future<bool> login(String username, String password) async {
     try {
@@ -27,46 +34,87 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> getProduct(String code) async {
+  /// Fetches all products into the cache (hits backend only once per session).
+  Future<List<Map<String, dynamic>>?> _fetchAllProducts(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/products/?query='),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is List) {
+        _allProductsCache = List<Map<String, dynamic>>.from(data);
+        return _allProductsCache;
+      }
+    }
+    return null;
+  }
+
+  /// Search products.
+  /// - Empty query  → returns the cached initial list (20 items from backend).
+  /// - Non-empty    → filters cache locally; falls back to backend only if the
+  ///                  cache is empty or the local search returns nothing.
+  Future<List<Map<String, dynamic>>?> searchProducts(String query) async {
     try {
       final token = await storage.read(key: 'access_token');
       if (token == null) return null;
 
+      // ── Empty query: just show the cached initial list ───────────────────
+      if (query.isEmpty) {
+        if (_allProductsCache != null) return _allProductsCache;
+        return await _fetchAllProducts(token); // first load — hits backend once
+      }
+
+      // ── Non-empty query: search the cache locally first ──────────────────
+      // Make sure the cache is populated
+      if (_allProductsCache == null) {
+        await _fetchAllProducts(token);
+      }
+
+      final q = query.toLowerCase();
+      final localResults = _allProductsCache
+          ?.where((p) =>
+              (p['product_code']?.toString().toLowerCase().contains(q) ?? false) ||
+              (p['name']?.toString().toLowerCase().contains(q) ?? false))
+          .toList();
+
+      // If we got local hits, return immediately — no backend call needed
+      if (localResults != null && localResults.isNotEmpty) {
+        return localResults;
+      }
+
+      // Cache miss → hit the backend for a precise search
       final response = await http.get(
-        Uri.parse('$baseUrl/products/?code=$code'),
+        Uri.parse('$baseUrl/products/?query=$query'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data is List && data.isNotEmpty) {
-          return data[0] as Map<String, dynamic>;
+        if (data is List) {
+          final results = List<Map<String, dynamic>>.from(data);
+          // Merge results into cache to avoid future backend calls
+          if (results.isNotEmpty && _allProductsCache != null) {
+            final existingCodes = _allProductsCache!
+                .map((p) => p['product_code'])
+                .toSet();
+            for (final r in results) {
+              if (!existingCodes.contains(r['product_code'])) {
+                _allProductsCache!.add(r);
+              }
+            }
+          }
+          return results;
         }
       }
       return null;
     } catch (e) {
       return null;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> getFrequentProducts() async {
-    try {
-      final token = await storage.read(key: 'access_token');
-      if (token == null) return [];
-      final response = await http.get(
-        Uri.parse('$baseUrl/products/frequent/'),
-        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data is List) return List<Map<String, dynamic>>.from(data);
-      }
-      return [];
-    } catch (e) {
-      return [];
     }
   }
 
@@ -96,8 +144,18 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> getProfile() async {
+  // ── In-memory profile cache ──────────────────────────────────────────────
+  static Map<String, dynamic>? _profileCache;
+
+  /// Call this to clear the profile cache (e.g. on logout or update).
+  static void clearProfileCache() => _profileCache = null;
+
+  Future<Map<String, dynamic>?> getProfile({bool forceRefresh = false}) async {
     try {
+      if (!forceRefresh && _profileCache != null) {
+        return _profileCache;
+      }
+
       final token = await storage.read(key: 'access_token');
       if (token == null) return null;
 
@@ -109,7 +167,8 @@ class ApiService {
         },
       );
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        _profileCache = jsonDecode(response.body);
+        return _profileCache;
       }
       return null;
     } catch (e) {
@@ -130,14 +189,54 @@ class ApiService {
         },
         body: jsonEncode(data),
       );
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        clearProfileCache(); // Refresh on next fetch
+        return true;
+      }
+      return false;
     } catch (e) {
       return false;
+    }
+  }
+
+  Future<bool> updateProfilePhoto(String imagePath) async {
+    try {
+      final token = await storage.read(key: 'access_token');
+      if (token == null) return false;
+
+      final request = http.MultipartRequest('PATCH', Uri.parse('$baseUrl/profile/'));
+      request.headers['Authorization'] = 'Bearer $token';
+      request.files.add(await http.MultipartFile.fromPath('profile_photo', imagePath));
+
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        clearProfileCache(); // Refresh on next fetch
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> incrementSearchCount() async {
+    try {
+      final token = await storage.read(key: 'access_token');
+      if (token == null) return;
+      await http.post(
+        Uri.parse('$baseUrl/profile/increment-search/'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      clearProfileCache(); // Ensure next visit shows updated count
+    } catch (e) {
+      // Ignore errors for background sync
     }
   }
 
   Future<void> logout() async {
     await storage.delete(key: 'access_token');
     await storage.delete(key: 'refresh_token');
+    clearProfileCache();
+    clearProductCache();
   }
 }

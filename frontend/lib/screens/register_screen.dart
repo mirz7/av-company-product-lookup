@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -71,14 +72,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeProvider>().isDark;
+    final bgColors = isDark ? [AppTheme.darkBg1, AppTheme.darkBg2, const Color(0xFF2A0D0D)] : [AppTheme.lightBg1, AppTheme.lightBg2, const Color(0xFFE8D0C8)];
+    final textColor = isDark ? Colors.white : AppTheme.lightText;
+    final subTextColor = isDark ? Colors.white54 : AppTheme.lightSubText;
+    final cardColor = isDark ? Colors.white.withOpacity(0.07) : Colors.white.withOpacity(0.6);
+    final borderColor = isDark ? Colors.white.withOpacity(0.10) : AppTheme.lightBorder;
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF2A0D0D) : const Color(0xFFE8D0C8),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF0D0D0D), Color(0xFF1A0505), Color(0xFF9E2016)],
+            colors: bgColors,
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            stops: [0.0, 0.5, 1.0],
+            stops: const [0.0, 0.5, 1.0],
           ),
         ),
         child: SafeArea(
@@ -86,48 +94,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
             key: _formKey,
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height -
+                      MediaQuery.of(context).padding.top -
+                      MediaQuery.of(context).padding.bottom -
+                      32,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Back button + header
                   Row(
                     children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white.withOpacity(0.15)),
+                      if (_currentStep == 1) ...[
+                        GestureDetector(
+                          onTap: () => setState(() => _currentStep = 0),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: borderColor),
+                            ),
+                            child: Icon(Icons.arrow_back_ios_new, color: textColor, size: 18),
                           ),
-                          child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
                         ),
-                      ),
-                      const SizedBox(width: 16),
+                        const SizedBox(width: 16),
+                      ],
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Create Account', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white)),
-                            Text('Join the AV & Company team', style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5))),
+                            Text('Create Account', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textColor)),
+                            Text('Join the AV & Company team', style: TextStyle(fontSize: 13, color: subTextColor)),
                           ],
                         ),
                       ),
                       // Logo
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
                         child: Image.asset(
                           'assets/images/logo.png',
-                          width: 36,
-                          height: 36,
-                          fit: BoxFit.contain,
-                          errorBuilder: (c, e, s) => const Icon(Icons.business, size: 36, color: Color(0xFF9E2016)),
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => const Icon(Icons.business, size: 48, color: Color(0xFF9E2016)),
                         ),
                       ),
                     ],
@@ -283,8 +298,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               child: OutlinedButton(
                                 onPressed: () => setState(() => _currentStep = 0),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.white70,
-                                  side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                                  foregroundColor: subTextColor,
+                                  side: BorderSide(color: borderColor),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                 ),
                                 child: const Text('Back', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -303,9 +318,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: RichText(
                         text: TextSpan(
                           text: 'Already have an account? ',
-                          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+                          style: TextStyle(color: subTextColor, fontSize: 13),
                           children: const [
-                            TextSpan(text: 'Sign In', style: TextStyle(color: Color(0xFFFF6B6B), fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                            TextSpan(text: 'Sign In', style: TextStyle(color: AppTheme.crimsonGlow, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
                           ],
                         ),
                       ),
@@ -318,10 +333,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildStepDot(int step, String label) {
+    final isDark = context.read<ThemeProvider>().isDark;
+    final subTextColor = isDark ? Colors.white70 : AppTheme.lightSubText;
     final isActive = _currentStep >= step;
     return Column(
       children: [
@@ -330,28 +349,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: isActive ? const Color(0xFF9E2016) : Colors.white.withOpacity(0.1),
+            color: isActive ? const Color(0xFF9E2016) : (isDark ? Colors.white.withOpacity(0.1) : AppTheme.lightBorder),
             shape: BoxShape.circle,
-            border: Border.all(color: isActive ? const Color(0xFF9E2016) : Colors.white.withOpacity(0.2), width: 2),
+            border: Border.all(color: isActive ? const Color(0xFF9E2016) : (isDark ? Colors.white.withOpacity(0.2) : AppTheme.lightBorder), width: 2),
           ),
           child: Center(
             child: isActive
                 ? (_currentStep > step ? const Icon(Icons.check, color: Colors.white, size: 16) : Text('${step + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)))
-                : Text('${step + 1}', style: TextStyle(color: Colors.white.withOpacity(0.4), fontWeight: FontWeight.bold, fontSize: 13)),
+                : Text('${step + 1}', style: TextStyle(color: isDark ? Colors.white.withOpacity(0.4) : AppTheme.lightSubText, fontWeight: FontWeight.bold, fontSize: 13)),
           ),
         ),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 10, color: isActive ? Colors.white70 : Colors.white30, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+        Text(label, style: TextStyle(fontSize: 10, color: isActive ? subTextColor : (isDark ? Colors.white30 : AppTheme.lightSubText.withOpacity(0.5)), fontWeight: FontWeight.w600, letterSpacing: 0.5)),
       ],
     );
   }
 
   Widget _buildSectionLabel(String label) {
+    final isDark = context.read<ThemeProvider>().isDark;
+    final subTextColor = isDark ? Colors.white70 : AppTheme.lightSubText;
     return Row(
       children: [
         Container(width: 3, height: 16, decoration: BoxDecoration(color: const Color(0xFF9E2016), borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 10),
-        Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white.withOpacity(0.5), letterSpacing: 1.5)),
+        Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: subTextColor, letterSpacing: 1.5)),
       ],
     );
   }
@@ -364,10 +385,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {
+    final isDark = context.read<ThemeProvider>().isDark;
+    final textColor = isDark ? Colors.white : AppTheme.lightText;
+    final subTextColor = isDark ? Colors.white70 : AppTheme.lightSubText;
+    final borderColor = isDark ? Colors.white.withOpacity(0.1) : AppTheme.lightBorder;
+    final fillColor = isDark ? Colors.white.withOpacity(0.07) : Colors.white;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70, letterSpacing: 0.3)),
+        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: subTextColor, letterSpacing: 0.3)),
         const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
@@ -377,34 +404,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
               controller: controller,
               keyboardType: keyboardType,
               validator: validator,
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+              style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w500),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 14),
+                hintStyle: TextStyle(color: isDark ? Colors.white.withOpacity(0.3) : AppTheme.lightSubText.withOpacity(0.5), fontSize: 14),
                 prefixIcon: Icon(icon, color: const Color(0xFF9E2016), size: 20),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.07),
+                fillColor: fillColor,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Color(0xFF9E2016), width: 1.5),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Colors.redAccent, width: 1),
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF9E2016), width: 1.5)),
+                errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Colors.redAccent, width: 1)),
+                focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Colors.redAccent, width: 1.5)),
                 errorStyle: const TextStyle(color: Color(0xFFFF6B6B), fontSize: 11),
               ),
             ),
@@ -422,10 +434,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required VoidCallback onToggle,
     String? Function(String?)? validator,
   }) {
+    final isDark = context.read<ThemeProvider>().isDark;
+    final textColor = isDark ? Colors.white : AppTheme.lightText;
+    final subTextColor = isDark ? Colors.white70 : AppTheme.lightSubText;
+    final borderColor = isDark ? Colors.white.withOpacity(0.1) : AppTheme.lightBorder;
+    final fillColor = isDark ? Colors.white.withOpacity(0.07) : Colors.white;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70, letterSpacing: 0.3)),
+        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: subTextColor, letterSpacing: 0.3)),
         const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
@@ -436,20 +454,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
               obscureText: !visible,
               validator: validator,
               onChanged: (_) => setState(() {}),
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+              style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w500),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 14),
+                hintStyle: TextStyle(color: isDark ? Colors.white.withOpacity(0.3) : AppTheme.lightSubText.withOpacity(0.5), fontSize: 14),
                 prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF9E2016), size: 20),
                 suffixIcon: IconButton(
-                  icon: Icon(visible ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.white38, size: 20),
+                  icon: Icon(visible ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: isDark ? Colors.white70 : AppTheme.lightSubText, size: 20),
                   onPressed: onToggle,
                 ),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.07),
+                fillColor: fillColor,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor)),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF9E2016), width: 1.5)),
                 errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Colors.redAccent, width: 1)),
                 focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Colors.redAccent, width: 1.5)),
@@ -499,10 +517,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildRoleDropdown() {
+    final isDark = context.read<ThemeProvider>().isDark;
+    final textColor = isDark ? Colors.white : AppTheme.lightText;
+    final subTextColor = isDark ? Colors.white70 : AppTheme.lightSubText;
+    final borderColor = isDark ? Colors.white.withOpacity(0.1) : AppTheme.lightBorder;
+    final fillColor = isDark ? Colors.white.withOpacity(0.07) : Colors.white;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Company Role', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70, letterSpacing: 0.3)),
+        Text('Company Role', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: subTextColor, letterSpacing: 0.3)),
         const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
@@ -510,21 +534,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: DropdownButtonFormField<String>(
               value: _selectedRole,
-              dropdownColor: const Color(0xFF1C0A0A),
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+              dropdownColor: isDark ? const Color(0xFF1C0A0A) : Colors.white,
+              style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w500),
               iconEnabledColor: const Color(0xFF9E2016),
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.badge_outlined, color: Color(0xFF9E2016), size: 20),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.07),
+                fillColor: fillColor,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor)),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF9E2016), width: 1.5)),
               ),
               items: _roles.map((role) => DropdownMenuItem(
                 value: role,
-                child: Text(role, style: const TextStyle(color: Colors.white)),
+                child: Text(role, style: TextStyle(color: textColor)),
               )).toList(),
               onChanged: (val) => setState(() => _selectedRole = val!),
             ),
