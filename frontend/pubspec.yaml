@@ -18,6 +18,8 @@ dependencies:
   simple_barcode_scanner: ^0.6.0
   mobile_scanner: ^6.0.0
   image_picker: ^1.2.2
+  shared_preferences: ^2.5.5
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

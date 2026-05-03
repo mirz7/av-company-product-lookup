@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/theme_provider.dart';
 import '../services/api_service.dart';
 import 'search_screen.dart';
@@ -408,7 +409,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                 border: Border.all(color: const Color(0xFF9E2016), width: 3),
                                                 boxShadow: [BoxShadow(color: const Color(0xFF9E2016).withOpacity(0.4), blurRadius: 20)],
                                                 image: DecorationImage(
-                                                  image: NetworkImage(
+                                                  image: CachedNetworkImageProvider(
                                                     (_profileData?['profile_photo'] != null && _profileData!['profile_photo'].toString().isNotEmpty)
                                                         ? (_profileData!['profile_photo'].toString().startsWith('http')
                                                             ? _profileData!['profile_photo']

@@ -475,7 +475,6 @@ class _SearchScreenState extends State<SearchScreen> {
     final name = data['name']?.isNotEmpty == true ? data['name'] : data['product_code'] ?? 'Product';
     final code = data['product_code'] ?? '';
     final price = data['price']?.toString() ?? '—';
-    final costPrice = data['cost_price']?.toString() ?? '—';
     final priceA = data['price_1']?.toString() ?? '—';
     final priceB = data['price_2']?.toString() ?? '—';
     final priceC = data['price_3']?.toString() ?? '—';
@@ -544,7 +543,6 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildPriceItem('Cost', costPrice),
                   _buildPriceItem('Price A', priceA),
                   _buildPriceItem('Price B', priceB),
                   _buildPriceItem('Price C', priceC),

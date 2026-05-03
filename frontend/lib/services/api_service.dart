@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   // Use the PC's local IP address so the physical Android device can connect over Wi-Fi
@@ -37,19 +38,42 @@ class ApiService {
 
   /// Fetches all products into the cache (hits backend only once per session).
   Future<List<Map<String, dynamic>>?> _fetchAllProducts(String token) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/products/?query='),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data is List) {
-        _allProductsCache = List<Map<String, dynamic>>.from(data);
-        return _allProductsCache;
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/products/?query='),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10)); // Timeout for offline detection
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is List) {
+          _allProductsCache = List<Map<String, dynamic>>.from(data);
+          
+          // Save to local storage for offline use
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('cached_products', jsonEncode(_allProductsCache));
+          } catch (_) {}
+
+          return _allProductsCache;
+        }
       }
+    } catch (e) {
+      // If server is unavailable, fallback to SharedPreferences
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final cachedData = prefs.getString('cached_products');
+        if (cachedData != null) {
+          final data = jsonDecode(cachedData);
+          if (data is List) {
+            _allProductsCache = List<Map<String, dynamic>>.from(data);
+            return _allProductsCache;
+          }
+        }
+      } catch (_) {}
     }
     return null;
   }
@@ -88,30 +112,44 @@ class ApiService {
       }
 
       // Cache miss → hit the backend for a precise search
-      final response = await http.get(
-        Uri.parse('$baseUrl/products/?query=$query'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data is List) {
-          final results = List<Map<String, dynamic>>.from(data);
-          // Merge results into cache to avoid future backend calls
-          if (results.isNotEmpty && _allProductsCache != null) {
-            final existingCodes = _allProductsCache!
-                .map((p) => p['product_code'])
-                .toSet();
-            for (final r in results) {
-              if (!existingCodes.contains(r['product_code'])) {
-                _allProductsCache!.add(r);
+      try {
+        final response = await http.get(
+          Uri.parse('$baseUrl/products/?query=$query'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ).timeout(const Duration(seconds: 10));
+        
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data is List) {
+            final results = List<Map<String, dynamic>>.from(data);
+            // Merge results into cache to avoid future backend calls
+            if (results.isNotEmpty && _allProductsCache != null) {
+              final existingCodes = _allProductsCache!
+                  .map((p) => p['product_code'])
+                  .toSet();
+              bool cacheUpdated = false;
+              for (final r in results) {
+                if (!existingCodes.contains(r['product_code'])) {
+                  _allProductsCache!.add(r);
+                  cacheUpdated = true;
+                }
+              }
+              if (cacheUpdated) {
+                try {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('cached_products', jsonEncode(_allProductsCache));
+                } catch (_) {}
               }
             }
+            return results;
           }
-          return results;
         }
+      } catch (e) {
+        // Precise search failed (e.g. server offline), return what we have
+        return localResults;
       }
       return null;
     } catch (e) {
@@ -157,17 +195,38 @@ class ApiService {
         final token = await storage.read(key: 'access_token');
         if (token == null) return null;
 
-        final response = await http.get(
-          Uri.parse('$baseUrl/profile/'),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        );
-        if (response.statusCode == 200) {
-          _profileCache = jsonDecode(response.body);
-        } else {
-          return null;
+        try {
+          final response = await http.get(
+            Uri.parse('$baseUrl/profile/'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+          ).timeout(const Duration(seconds: 10));
+          
+          if (response.statusCode == 200) {
+            _profileCache = jsonDecode(response.body);
+            
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('cached_profile', jsonEncode(_profileCache));
+            } catch (_) {}
+          } else {
+            throw Exception('Server returned ${response.statusCode}');
+          }
+        } catch (e) {
+          // If server is unavailable, fallback to SharedPreferences
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            final cachedProfile = prefs.getString('cached_profile');
+            if (cachedProfile != null) {
+              _profileCache = jsonDecode(cachedProfile);
+            } else {
+              return null;
+            }
+          } catch (_) {
+            return null;
+          }
         }
       }
 
@@ -254,5 +313,10 @@ class ApiService {
     await storage.delete(key: 'refresh_token');
     clearProfileCache();
     clearProductCache();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('cached_products');
+      await prefs.remove('cached_profile');
+    } catch (_) {}
   }
 }

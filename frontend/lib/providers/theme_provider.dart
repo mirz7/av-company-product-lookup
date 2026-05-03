@@ -39,7 +39,7 @@ class ThemeProvider extends ChangeNotifier {
   static const _storageKey = 'theme_mode';
   final _storage = const FlutterSecureStorage();
 
-  bool _isDark = true;
+  bool _isDark = false;
 
   bool get isDark => _isDark;
   ThemeMode get themeMode => _isDark ? ThemeMode.dark : ThemeMode.light;
@@ -50,7 +50,7 @@ class ThemeProvider extends ChangeNotifier {
 
   Future<void> _loadTheme() async {
     final saved = await _storage.read(key: _storageKey);
-    _isDark = saved != 'light';
+    _isDark = saved == 'dark';
     notifyListeners();
   }
 

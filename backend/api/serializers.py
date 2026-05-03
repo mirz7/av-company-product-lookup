@@ -6,7 +6,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['product_code', 'name', 'price', 'cost_price', 'price_1', 'price_2', 'price_3']
+        fields = ['product_code', 'name', 'price', 'price_1', 'price_2', 'price_3']
 
     def get_price(self, obj):
         # Get the requested user
