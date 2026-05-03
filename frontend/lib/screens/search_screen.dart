@@ -316,7 +316,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         width: boxW,
                         height: boxH,
                         decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFFF6B6B), width: 2.5),
+                          // border removed to keep only corner accents
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Stack(
