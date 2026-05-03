@@ -26,6 +26,7 @@ class ApiService {
         final data = jsonDecode(response.body);
         await storage.write(key: 'access_token', value: data['access']);
         await storage.write(key: 'refresh_token', value: data['refresh']);
+        await storage.write(key: 'login_time', value: DateTime.now().toIso8601String());
         return true;
       }
       return false;
@@ -152,25 +153,40 @@ class ApiService {
 
   Future<Map<String, dynamic>?> getProfile({bool forceRefresh = false}) async {
     try {
-      if (!forceRefresh && _profileCache != null) {
-        return _profileCache;
+      if (forceRefresh || _profileCache == null) {
+        final token = await storage.read(key: 'access_token');
+        if (token == null) return null;
+
+        final response = await http.get(
+          Uri.parse('$baseUrl/profile/'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        );
+        if (response.statusCode == 200) {
+          _profileCache = jsonDecode(response.body);
+        } else {
+          return null;
+        }
       }
 
-      final token = await storage.read(key: 'access_token');
-      if (token == null) return null;
-
-      final response = await http.get(
-        Uri.parse('$baseUrl/profile/'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-      if (response.statusCode == 200) {
-        _profileCache = jsonDecode(response.body);
-        return _profileCache;
+      // Inject dynamically calculated session hours
+      if (_profileCache != null) {
+        final loginTimeStr = await storage.read(key: 'login_time');
+        if (loginTimeStr != null) {
+          try {
+            final loginTime = DateTime.parse(loginTimeStr);
+            final diff = DateTime.now().difference(loginTime);
+            // using inSeconds for exact granularity, 2 decimal places to capture minutes cleanly
+            _profileCache!['hours_logged'] = (diff.inSeconds / 3600.0).toStringAsFixed(2);
+          } catch (e) {
+            // fallback if parsing fails
+          }
+        }
       }
-      return null;
+
+      return _profileCache;
     } catch (e) {
       return null;
     }

@@ -352,7 +352,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: Image.asset('assets/images/logo.png', height: 38, width: 38, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.business, size: 38, color: AppTheme.crimson)),
                               ),
                               const SizedBox(width: 12),
-                              Text('AV & Company', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 1.5)),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('AV & Company', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 1.5)),
+                                  Text('Retail Hub', style: TextStyle(fontSize: 12, color: subTextColor, letterSpacing: 1.0)),
+                                ],
+                              ),
                             ],
                           ),
                           Container(
@@ -362,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(color: AppTheme.crimson.withOpacity(0.4)),
                             ),
-                            child: const Text('PROFILE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.crimsonGlow, letterSpacing: 1.5)),
+                            child: const Text('MY SPACE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.crimsonGlow, letterSpacing: 1.5)),
                           ),
                         ],
                       ),
