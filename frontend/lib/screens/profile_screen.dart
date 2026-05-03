@@ -372,7 +372,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ],
                       ),
-                    ).animate().fadeIn(delay: 100.ms),
+                    ).animate().fadeIn(delay: 50.ms).slideY(begin: 0.05),
 
                     Expanded(
                       child: RefreshIndicator(
@@ -474,21 +474,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                 ),
-                              ).animate().scale(delay: 200.ms, duration: 400.ms, curve: Curves.easeOutBack),
+                              ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.05),
 
                               const SizedBox(height: 16),
 
                               Row(
                                 children: [
-                                  Expanded(child: _buildStatCard('Searches Today', _profileData?['searches_today']?.toString() ?? '0', 'searches', true).animate().slideX(begin: -0.2, delay: 300.ms)),
+                                  Expanded(child: _buildStatCard('Searches Today', _profileData?['searches_today']?.toString() ?? '0', 'searches', true).animate().fadeIn(delay: 150.ms).slideY(begin: 0.05)),
                                   const SizedBox(width: 12),
-                                  Expanded(child: _buildStatCard('Hours Logged', _profileData?['hours_logged']?.toString() ?? '0.0', 'hrs', false).animate().slideX(begin: 0.2, delay: 300.ms)),
+                                  Expanded(child: _buildStatCard('Hours Logged', _profileData?['hours_logged']?.toString() ?? '0.0', 'hrs', false).animate().fadeIn(delay: 200.ms).slideY(begin: 0.05)),
                                 ],
                               ),
 
                               const SizedBox(height: 12),
 
-                              _buildPermissionCard().animate().fadeIn(delay: 400.ms),
+                              _buildPermissionCard().animate().fadeIn(delay: 250.ms).slideY(begin: 0.05),
 
                               const SizedBox(height: 24),
 
@@ -501,13 +501,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     Text('USER DETAILS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: subTextColor, letterSpacing: 1.5)),
                                   ],
                                 ),
-                              ).animate().fadeIn(delay: 450.ms),
+                              ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.05),
 
                               const SizedBox(height: 12),
 
-                              _buildActionItem(Icons.phone_outlined, _profileData?['phone_number']?.isNotEmpty == true ? _profileData!['phone_number'] : 'Add Phone Number', _editPhoneNumber).animate().fadeIn(delay: 500.ms),
+                              _buildActionItem(Icons.phone_outlined, _profileData?['phone_number']?.isNotEmpty == true ? _profileData!['phone_number'] : 'Add Phone Number', _editPhoneNumber).animate().fadeIn(delay: 350.ms).slideY(begin: 0.05),
                               const SizedBox(height: 8),
-                              _buildActionItem(Icons.email_outlined, _profileData?['email']?.isNotEmpty == true ? _profileData!['email'] : 'No Email', () {}).animate().fadeIn(delay: 550.ms),
+                              _buildActionItem(Icons.email_outlined, _profileData?['email']?.isNotEmpty == true ? _profileData!['email'] : 'No Email', () {}).animate().fadeIn(delay: 400.ms).slideY(begin: 0.05),
                               const SizedBox(height: 8),
 
                               ClipRRect(
@@ -563,7 +563,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                 ),
-                              ).animate().fadeIn(delay: 575.ms),
+                              ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.05),
                               const SizedBox(height: 8),
 
                               GestureDetector(
@@ -593,7 +593,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                 ),
-                              ).animate().fadeIn(delay: 600.ms),
+                              ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.05),
                               const SizedBox(height: 16),
                             ],
                           ),
