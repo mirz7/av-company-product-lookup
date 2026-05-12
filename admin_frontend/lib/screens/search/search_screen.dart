@@ -43,30 +43,52 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeProvider>().isDark;
-    final bg = isDark ? [AppTheme.darkSurface, AppTheme.darkBg2, const Color(0xFF3A1010)] : [AppTheme.lightBg1, AppTheme.lightBg2, const Color(0xFFE8CFC8)];
+    final bg = isDark
+        ? [AppTheme.darkBg1, AppTheme.darkBg2, const Color(0xFF2D1010)]
+        : [AppTheme.lightBg1, AppTheme.lightBg2, const Color(0xFFCFBBAA)];
     final textColor = isDark ? Colors.white : AppTheme.lightText;
     final sub = isDark ? Colors.white54 : AppTheme.lightSubText;
-    final card = isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.75);
-    final border = isDark ? Colors.white.withOpacity(0.12) : AppTheme.lightBorder;
+    final card = isDark ? Colors.white.withOpacity(0.06) : Colors.white.withOpacity(0.8);
+    final border = isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBorder;
     final hint = isDark ? Colors.white54 : AppTheme.lightSubText.withOpacity(0.6);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF3A1010) : const Color(0xFFE8CFC8),
+      backgroundColor: isDark ? const Color(0xFF2D1010) : const Color(0xFFCFBBAA),
       body: Container(
-        decoration: BoxDecoration(gradient: LinearGradient(colors: bg, begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: const [0.0, 0.65, 1.0])),
+        decoration: BoxDecoration(gradient: LinearGradient(colors: bg, begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: const [0.0, 0.5, 1.0])),
         child: SafeArea(child: Column(children: [
           // AppBar
           Padding(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Row(children: [
-              ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('assets/images/logo.png', height: 38, width: 38, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.business, size: 38, color: AppTheme.crimson))),
+              Container(
+                height: 42, width: 42,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                  boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset('assets/images/logo.png', fit: BoxFit.cover,
+                    errorBuilder: (c, e, s) => const Center(child: Text('AV', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)))),
+                ),
+              ),
               const SizedBox(width: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('AV & Company', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 1.5)),
-                Text('Admin Search', style: TextStyle(fontSize: 11, color: sub)),
+                Text('AV & COMPANY', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 2.0)),
+                const SizedBox(height: 1),
+                Text('Product Search', style: TextStyle(fontSize: 11, color: sub, letterSpacing: 0.5)),
               ]),
             ]),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: AppTheme.crimson.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.crimson.withOpacity(0.35))),
-              child: const Row(children: [Icon(Icons.search_rounded, color: AppTheme.crimsonGlow, size: 14), SizedBox(width: 6), Text('SEARCH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.crimsonGlow, letterSpacing: 1.5))])),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.primary.withOpacity(0.3))),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.search_rounded, color: AppTheme.primaryGlow, size: 14),
+                const SizedBox(width: 6),
+                Text('SEARCH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryGlow, letterSpacing: 1.5)),
+              ]),
+            ),
           ])).animate().fadeIn(delay: 100.ms),
 
           Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -76,10 +98,10 @@ class _SearchScreenState extends State<SearchScreen> {
               decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
               child: Row(children: [
                 Expanded(child: GestureDetector(onTap: _cameraMode ? _deactivateCam : null, child: AnimatedContainer(duration: 300.ms, curve: Curves.easeInOut, padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(gradient: !_cameraMode ? const LinearGradient(colors: [AppTheme.crimson, AppTheme.crimsonLight]) : null, borderRadius: BorderRadius.circular(10), boxShadow: !_cameraMode ? [BoxShadow(color: AppTheme.crimson.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))] : null),
+                  decoration: BoxDecoration(gradient: !_cameraMode ? const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]) : null, borderRadius: BorderRadius.circular(10), boxShadow: !_cameraMode ? [BoxShadow(color: AppTheme.primary.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))] : null),
                   alignment: Alignment.center, child: Text('Product Code', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: !_cameraMode ? Colors.white : sub))))),
                 Expanded(child: GestureDetector(onTap: _cameraMode ? null : _activateCam, child: AnimatedContainer(duration: 300.ms, curve: Curves.easeInOut, padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(gradient: _cameraMode ? const LinearGradient(colors: [AppTheme.crimson, AppTheme.crimsonLight]) : null, borderRadius: BorderRadius.circular(10), boxShadow: _cameraMode ? [BoxShadow(color: AppTheme.crimson.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))] : null),
+                  decoration: BoxDecoration(gradient: _cameraMode ? const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]) : null, borderRadius: BorderRadius.circular(10), boxShadow: _cameraMode ? [BoxShadow(color: AppTheme.primary.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))] : null),
                   alignment: Alignment.center, child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.qr_code_scanner, size: 16, color: _cameraMode ? Colors.white : sub), const SizedBox(width: 6), Text('Barcode Scan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _cameraMode ? Colors.white : sub))])))),
               ]),
             ))).animate().fadeIn(delay: 200.ms),
@@ -89,36 +111,36 @@ class _SearchScreenState extends State<SearchScreen> {
               AnimatedContainer(duration: 400.ms, curve: Curves.easeInOut, height: 260, child: ClipRRect(borderRadius: BorderRadius.circular(20), child: Stack(children: [
                 MobileScanner(controller: _cam!, onDetect: _onDetect),
                 Container(decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.black.withOpacity(0.4), Colors.transparent, Colors.black.withOpacity(0.4)], begin: Alignment.topCenter, end: Alignment.bottomCenter))),
-                Positioned(top: 12, left: 0, right: 0, child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.qr_code_scanner, color: AppTheme.crimsonGlow, size: 16), SizedBox(width: 6), Text('SCANNER ACTIVE', style: TextStyle(color: AppTheme.crimsonGlow, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5))])),
+                Positioned(top: 12, left: 0, right: 0, child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.qr_code_scanner, color: AppTheme.primaryGlow, size: 16), const SizedBox(width: 6), Text('SCANNER ACTIVE', style: TextStyle(color: AppTheme.primaryGlow, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5))])),
                 Positioned(bottom: 24, left: 0, right: 0, child: Text('Point at a barcode to scan', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13, fontWeight: FontWeight.w600), textAlign: TextAlign.center)),
               ]))).animate().fadeIn(duration: 350.ms)
             else
               ClipRRect(borderRadius: BorderRadius.circular(16), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: Container(
-                decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16), border: Border.all(color: border), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20)]),
+                decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16), border: Border.all(color: border)),
                 child: Row(children: [
-                  const Padding(padding: EdgeInsets.all(16), child: Icon(Icons.search_rounded, color: AppTheme.crimson, size: 24)),
+                  const Padding(padding: EdgeInsets.all(16), child: Icon(Icons.search_rounded, color: AppTheme.primary, size: 24)),
                   Expanded(child: TextField(controller: _ctrl, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textColor),
                     decoration: InputDecoration(hintText: 'Search by name or code...', hintStyle: TextStyle(color: hint, fontSize: 16, fontWeight: FontWeight.w500), border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(vertical: 18)),
                     onSubmitted: (v) => _load(v), onChanged: (_) => setState(() {}))),
                   if (_ctrl.text.isNotEmpty) IconButton(icon: Icon(Icons.close_rounded, color: sub, size: 20), onPressed: () { _ctrl.clear(); setState(() => _error = null); _load(''); }),
                   GestureDetector(onTap: () => _load(_ctrl.text.trim()), child: Container(margin: const EdgeInsets.all(8), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppTheme.crimson, AppTheme.crimsonLight]), borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: AppTheme.crimson.withOpacity(0.5), blurRadius: 8, offset: const Offset(0, 3))]),
+                    decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]), borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]),
                     child: const Text('Go', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)))),
                 ]),
               ))).animate().fadeIn(delay: 300.ms).slideY(begin: 0.05),
             const SizedBox(height: 24),
-            if (_loading) const Center(child: CircularProgressIndicator(color: AppTheme.crimson)).animate().fadeIn(),
+            if (_loading) const Center(child: CircularProgressIndicator(color: AppTheme.primary)).animate().fadeIn(),
             if (_error != null)
               ClipRRect(borderRadius: BorderRadius.circular(14), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), child: Container(
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: Colors.red.withOpacity(0.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.red.withOpacity(0.2))),
-                child: Row(children: [const Icon(Icons.search_off_rounded, color: AppTheme.crimsonGlow, size: 20), const SizedBox(width: 12), Expanded(child: Text(_error!, style: const TextStyle(color: AppTheme.crimsonGlow, fontSize: 13)))]),
+                decoration: BoxDecoration(color: AppTheme.danger.withOpacity(0.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppTheme.danger.withOpacity(0.2))),
+                child: Row(children: [Icon(Icons.search_off_rounded, color: AppTheme.danger, size: 20), const SizedBox(width: 12), Expanded(child: Text(_error!, style: TextStyle(color: AppTheme.danger, fontSize: 13)))]),
               ))).animate().fadeIn().shake(hz: 3, offset: const Offset(4, 0)),
             if (_products != null && _products!.isNotEmpty) ...[
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Row(children: [Container(width: 3, height: 14, decoration: BoxDecoration(color: AppTheme.crimsonGlow, borderRadius: BorderRadius.circular(2))), const SizedBox(width: 10), Text(_ctrl.text.isEmpty ? 'PRODUCTS' : 'SEARCH RESULTS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: sub, letterSpacing: 1.5))]),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: AppTheme.crimson.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.crimson.withOpacity(0.4))),
-                  child: Text(_ctrl.text.isEmpty ? '$_total Total' : '${_products!.length} Found', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.crimsonGlow))),
+                Row(children: [Container(width: 3, height: 14, decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(2))), const SizedBox(width: 10), Text(_ctrl.text.isEmpty ? 'PRODUCTS' : 'SEARCH RESULTS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: sub, letterSpacing: 1.5))]),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.primary.withOpacity(0.3))),
+                  child: Text(_ctrl.text.isEmpty ? '$_total Total' : '${_products!.length} Found', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryGlow))),
               ]),
               const SizedBox(height: 12),
               ListView.separated(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), itemCount: _products!.length, separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -140,11 +162,11 @@ class _SearchScreenState extends State<SearchScreen> {
     final pC = d['price_3']?.toString() ?? '—';
 
     return ClipRRect(borderRadius: BorderRadius.circular(18), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: Container(
-      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(18), border: Border.all(color: isResult ? AppTheme.crimson.withOpacity(0.25) : border), boxShadow: isResult ? [BoxShadow(color: AppTheme.crimson.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8))] : null),
+      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(18), border: Border.all(color: isResult ? AppTheme.primary.withOpacity(0.25) : border), boxShadow: isResult ? [BoxShadow(color: AppTheme.primary.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8))] : null),
       child: Column(children: [
-        Container(height: 4, decoration: const BoxDecoration(gradient: LinearGradient(colors: [AppTheme.crimson, AppTheme.crimsonGlow]), borderRadius: BorderRadius.vertical(top: Radius.circular(18)))),
+        Container(height: 4, decoration: BoxDecoration(gradient: LinearGradient(colors: [AppTheme.primary, AppTheme.primaryGlow]), borderRadius: const BorderRadius.vertical(top: Radius.circular(18)))),
         Padding(padding: const EdgeInsets.only(left: 18, right: 18, top: 14, bottom: 10), child: Row(children: [
-          Container(width: 44, height: 44, decoration: BoxDecoration(color: AppTheme.crimson.withOpacity(0.12), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.crimson.withOpacity(0.25))), child: const Icon(Icons.inventory_2_outlined, color: AppTheme.crimsonGlow, size: 22)),
+          Container(width: 44, height: 44, decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.primary.withOpacity(0.25))), child: Icon(Icons.inventory_2_outlined, color: AppTheme.primaryGlow, size: 22)),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor), maxLines: 1, overflow: TextOverflow.ellipsis),

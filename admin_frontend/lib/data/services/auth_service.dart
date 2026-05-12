@@ -18,7 +18,7 @@ class AuthService {
       await prefs.setString('access_token', token);
       try {
         final userResp = await http.get(
-          Uri.parse('${ApiConstants.baseUrl}/auth/me/'),
+          Uri.parse(ApiConstants.authMe),
           headers: {'Authorization': 'Bearer $token'},
         );
         if (userResp.statusCode == 200) {

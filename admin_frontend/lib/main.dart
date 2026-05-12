@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -10,6 +11,7 @@ import 'providers/dashboard_provider.dart';
 import 'providers/employee_provider.dart';
 import 'providers/approval_provider.dart';
 import 'providers/product_provider.dart';
+import 'providers/notification_provider.dart';
 
 import 'screens/splash/splash_screen.dart';
 import 'screens/login/login_screen.dart';
@@ -18,8 +20,27 @@ import 'screens/employees/employees_screen.dart';
 import 'screens/approvals/approvals_screen.dart';
 import 'screens/search/search_screen.dart';
 import 'screens/profile/profile_screen.dart';
+import 'services/background_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize notifications for foreground tap handling
+  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+  
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse: (NotificationResponse response) {
+      if (response.payload == 'new_registration') {
+        _router.go(RouteConstants.approvals);
+      }
+    },
+  );
+
+  await initializeService();
+  
   runApp(
     MultiProvider(
       providers: [
@@ -29,6 +50,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => EmployeeProvider()),
         ChangeNotifierProvider(create: (_) => ApprovalProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: const AdminApp(),
     ),
@@ -44,11 +66,11 @@ final _router = GoRouter(
     ShellRoute(
       builder: (context, state, child) => AdminScaffold(child: child),
       routes: [
-        GoRoute(path: RouteConstants.dashboard, builder: (_, __) => const DashboardScreen()),
-        GoRoute(path: RouteConstants.search,    builder: (_, __) => const SearchScreen()),
-        GoRoute(path: RouteConstants.employees, builder: (_, __) => const EmployeesScreen()),
-        GoRoute(path: RouteConstants.approvals, builder: (_, __) => const ApprovalsScreen()),
-        GoRoute(path: RouteConstants.profile,   builder: (_, __) => const ProfileScreen()),
+        GoRoute(path: RouteConstants.dashboard, pageBuilder: (context, state) => const NoTransitionPage(child: DashboardScreen())),
+        GoRoute(path: RouteConstants.search,    pageBuilder: (context, state) => const NoTransitionPage(child: SearchScreen())),
+        GoRoute(path: RouteConstants.employees, pageBuilder: (context, state) => const NoTransitionPage(child: EmployeesScreen())),
+        GoRoute(path: RouteConstants.approvals, pageBuilder: (context, state) => const NoTransitionPage(child: ApprovalsScreen())),
+        GoRoute(path: RouteConstants.profile,   pageBuilder: (context, state) => const NoTransitionPage(child: ProfileScreen())),
       ],
     ),
   ],
@@ -65,18 +87,30 @@ class AdminApp extends StatelessWidget {
 
     final dark = ThemeData(
       useMaterial3: true, brightness: Brightness.dark,
-      colorScheme: const ColorScheme.dark(primary: AppTheme.crimson, secondary: AppTheme.silver, surface: AppTheme.darkSurface, onPrimary: Colors.white, onSurface: Colors.white),
+      colorScheme: const ColorScheme.dark(
+        primary: AppTheme.primary,
+        secondary: AppTheme.accent,
+        surface: AppTheme.darkSurface,
+        onPrimary: Colors.white,
+        onSurface: Colors.white,
+      ),
       scaffoldBackgroundColor: AppTheme.darkBg1,
     ).copyWith(textTheme: poppins(ThemeData.dark().textTheme));
 
     final light = ThemeData(
       useMaterial3: true, brightness: Brightness.light,
-      colorScheme: const ColorScheme.light(primary: AppTheme.crimson, secondary: AppTheme.silverDark, surface: AppTheme.lightSurface, onPrimary: Colors.white, onSurface: AppTheme.lightText),
+      colorScheme: const ColorScheme.light(
+        primary: AppTheme.primary,
+        secondary: AppTheme.accent,
+        surface: AppTheme.lightSurface,
+        onPrimary: Colors.white,
+        onSurface: AppTheme.lightText,
+      ),
       scaffoldBackgroundColor: AppTheme.lightBg1,
     ).copyWith(textTheme: poppins(ThemeData.light().textTheme));
 
     return MaterialApp.router(
-      title: 'AV & Company Admin Portal',
+      title: 'AV Admin Portal',
       theme: light,
       darkTheme: dark,
       themeMode: themeProvider.themeMode,
@@ -86,7 +120,7 @@ class AdminApp extends StatelessWidget {
   }
 }
 
-// ─── Shell with 5-tab bottom nav ─────────────────────────────────────────────
+// ─── Shell with 4-tab bottom nav (matching Stitch design) ──────────────────
 class AdminScaffold extends StatelessWidget {
   final Widget child;
   const AdminScaffold({super.key, required this.child});
@@ -99,11 +133,13 @@ class AdminScaffold extends StatelessWidget {
     int idx = 0;
     if (loc == RouteConstants.search)    idx = 1;
     if (loc == RouteConstants.employees) idx = 2;
-    if (loc == RouteConstants.approvals) idx = 3;
-    if (loc == RouteConstants.profile)   idx = 4;
+    if (loc == RouteConstants.profile)   idx = 3;
 
-    final navBg = isDark ? const Color(0xFF12121F) : AppTheme.lightSurface;
-    final border = isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBorder;
+    final navBg = isDark ? const Color(0xFF161622) : AppTheme.lightSurface;
+    final border = isDark ? Colors.white.withOpacity(0.06) : AppTheme.lightBorder;
+
+    final dashboard = context.watch<DashboardProvider>();
+    final pendingCount = dashboard.metrics?.pendingApprovals ?? 0;
 
     return Scaffold(
       body: child,
@@ -111,19 +147,22 @@ class AdminScaffold extends StatelessWidget {
         decoration: BoxDecoration(
           color: navBg,
           border: Border(top: BorderSide(color: border)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.4 : 0.08), blurRadius: 20, offset: const Offset(0, -4))],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.5 : 0.08), blurRadius: 20, offset: const Offset(0, -4))],
         ),
-        padding: const EdgeInsets.only(bottom: 8, top: 6),
-        child: Row(children: [
-          _NavItem(icon: Icons.grid_view_rounded,  label: 'DASHBOARD',  isActive: idx == 0, isDark: isDark, onTap: () => context.go(RouteConstants.dashboard)),
-          _NavItem(icon: Icons.search_rounded,     label: 'SEARCH',     isActive: idx == 1, isDark: isDark, onTap: () => context.go(RouteConstants.search)),
-          _NavItem(icon: Icons.people_rounded,     label: 'EMPLOYEES',  isActive: idx == 2, isDark: isDark, onTap: () => context.go(RouteConstants.employees)),
-          Consumer<ApprovalProvider>(builder: (_, prov, __) =>
-            _NavItem(icon: Icons.shield_rounded, label: 'APPROVALS', isActive: idx == 3, isDark: isDark,
-                badge: prov.pendingCount > 0 ? '${prov.pendingCount}' : null,
-                onTap: () => context.go(RouteConstants.approvals))),
-          _NavItem(icon: Icons.person_rounded,     label: 'MY SPACE',   isActive: idx == 4, isDark: isDark, onTap: () => context.go(RouteConstants.profile)),
-        ]),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 12, top: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _NavItem(icon: Icons.dashboard_rounded,    label: 'Dashboard',  isActive: idx == 0, isDark: isDark, onTap: () => context.go(RouteConstants.dashboard)),
+                _NavItem(icon: Icons.search_rounded,       label: 'Search',     isActive: idx == 1, isDark: isDark, onTap: () => context.go(RouteConstants.search)),
+                _NavItem(icon: Icons.groups_rounded,       label: 'Employees',  isActive: idx == 2, isDark: isDark, badge: pendingCount > 0 ? '$pendingCount' : null, onTap: () => context.go(RouteConstants.employees)),
+                _NavItem(icon: Icons.person_rounded,       label: 'My Space',   isActive: idx == 3, isDark: isDark, onTap: () => context.go(RouteConstants.profile)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -136,28 +175,62 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? AppTheme.crimsonGlow : (isDark ? Colors.white38 : AppTheme.silverDark);
-    return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Stack(clipBehavior: Clip.none, children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-              decoration: BoxDecoration(color: isActive ? AppTheme.crimsonGlow.withOpacity(0.15) : Colors.transparent, borderRadius: BorderRadius.circular(20)),
-              child: Icon(icon, color: color, size: 22),
+    final color = isActive ? AppTheme.primary : (isDark ? Colors.white38 : AppTheme.silverDark);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width / 4,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isActive ? AppTheme.primary.withOpacity(0.12) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(icon, color: color, size: 22),
+                ),
+                if (badge != null)
+                  Positioned(
+                    top: -2,
+                    right: -4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.danger,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: isDark ? const Color(0xFF161622) : AppTheme.lightSurface, width: 1.5),
+                      ),
+                      child: Text(
+                        badge!,
+                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            if (badge != null)
-              Positioned(top: -2, right: 0, child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(color: AppTheme.crimson, borderRadius: BorderRadius.circular(8)),
-                child: Text(badge!, style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w800)),
-              )),
-          ]),
-          const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color, letterSpacing: 1.0)),
-        ]),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                color: color,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

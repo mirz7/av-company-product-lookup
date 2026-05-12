@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -54,19 +55,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (!mounted) return;
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(children: const [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
-            Text('Account created! Please login.', style: TextStyle(fontWeight: FontWeight.bold)),
-          ]),
-          backgroundColor: const Color(0xFF2D7A4F),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-      Navigator.pop(context);
+      // Auto-login then go to pending approval screen
+      final api = ApiService();
+      await api.login(_usernameController.text.trim(), _passwordController.text);
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(context, '/pending', (route) => false);
     }
   }
 

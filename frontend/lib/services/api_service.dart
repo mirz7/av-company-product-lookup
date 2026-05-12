@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -281,7 +283,19 @@ class ApiService {
 
       final request = http.MultipartRequest('PATCH', Uri.parse('$baseUrl/profile/'));
       request.headers['Authorization'] = 'Bearer $token';
-      request.files.add(await http.MultipartFile.fromPath('profile_photo', imagePath));
+
+      if (kIsWeb) {
+        // On web, paths are blob URLs, so we fetch bytes directly
+        final response = await http.get(Uri.parse(imagePath));
+        final bytes = response.bodyBytes;
+        request.files.add(http.MultipartFile.fromBytes(
+          'profile_photo',
+          bytes,
+          filename: 'profile_photo.jpg',
+        ));
+      } else {
+        request.files.add(await http.MultipartFile.fromPath('profile_photo', imagePath));
+      }
 
       final response = await request.send();
       if (response.statusCode == 200) {

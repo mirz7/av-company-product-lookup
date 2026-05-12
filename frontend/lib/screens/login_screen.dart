@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,7 +50,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
     if (!mounted) return;
     if (success) {
-      Navigator.pushReplacementNamed(context, '/search');
+      // Check if this employee has been approved by admin
+      final api = ApiService();
+      final profile = await api.getProfile(forceRefresh: true);
+      if (!mounted) return;
+      if (profile != null && profile['is_approved'] == true) {
+        Navigator.pushReplacementNamed(context, '/search');
+      } else {
+        Navigator.pushReplacementNamed(context, '/pending');
+      }
     } else {
       _triggerShake();
     }

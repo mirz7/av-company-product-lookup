@@ -10,7 +10,8 @@ class ProductService {
     try {
       final token = await _auth.getToken();
       var uri = Uri.parse(ApiConstants.products);
-      if (query.isNotEmpty) uri = uri.replace(queryParameters: {'search': query});
+      // Backend supports both 'query' and 'code' params
+      if (query.isNotEmpty) uri = uri.replace(queryParameters: {'query': query});
       final response = await http.get(uri, headers: {'Authorization': 'Bearer $token'});
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

@@ -23,6 +23,8 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Map<String, dynamic>>? _products;
   String? _errorMessage;
   int _totalProductsInDb = 0;
+  // Price access flags — refreshed from server on each profile load
+  bool _canSeeExtendedPrices = false; // Price B + C
 
   @override
   void initState() {
@@ -36,6 +38,9 @@ class _SearchScreenState extends State<SearchScreen> {
     if (mounted && profile != null) {
       setState(() {
         _totalProductsInDb = profile['total_products'] ?? 0;
+        // price_level >= 2 means the admin granted wholesale/discount (Price B+C)
+        final level = profile['price_level'] ?? 1;
+        _canSeeExtendedPrices = level >= 2;
       });
     }
   }
@@ -216,63 +221,103 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildTabBar() {
     final isDark = context.read<ThemeProvider>().isDark;
-    final borderColor = isDark ? Colors.white.withOpacity(0.1) : AppTheme.lightBorder;
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.08),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
-          child: Row(children: [
-            // Product Code tab
-            Expanded(
-              child: GestureDetector(
-                onTap: _isCameraMode ? _deactivateCameraMode : null,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: !_isCameraMode ? const LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFB22A1A)]) : null,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: !_isCameraMode ? [BoxShadow(color: const Color(0xFF9E2016).withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))] : null,
+          child: Stack(
+            children: [
+              // Sliding Pill Background
+              AnimatedAlign(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                alignment: _isCameraMode ? Alignment.centerRight : Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: 0.5,
+                  child: Container(
+                    height: 42,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF9E2016), Color(0xFFB22A1A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF9E2016).withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
+                    ),
                   ),
-                  alignment: Alignment.center,
-                  child: Text('Product Code', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: !_isCameraMode ? Colors.white : (isDark ? Colors.white.withOpacity(0.45) : AppTheme.silverDark))),
                 ),
               ),
-            ),
-            // Barcode Scan tab
-            Expanded(
-              child: GestureDetector(
-                onTap: _isCameraMode ? null : _activateCameraMode,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: _isCameraMode ? const LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFB22A1A)]) : null,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: _isCameraMode ? [BoxShadow(color: const Color(0xFF9E2016).withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))] : null,
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () { if (_isCameraMode) _deactivateCameraMode(); },
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        height: 42,
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Product Code',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: !_isCameraMode ? Colors.white : (isDark ? Colors.white.withOpacity(0.4) : AppTheme.silverDark),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  alignment: Alignment.center,
-                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.qr_code_scanner, size: 16, color: _isCameraMode ? Colors.white : (isDark ? Colors.white.withOpacity(0.5) : AppTheme.silverDark)),
-                    const SizedBox(width: 6),
-                    Text('Barcode Scan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _isCameraMode ? Colors.white : (isDark ? Colors.white.withOpacity(0.5) : AppTheme.silverDark))),
-                  ]),
-                ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () { if (!_isCameraMode) _activateCameraMode(); },
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        height: 42,
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.qr_code_scanner,
+                              size: 16,
+                              color: _isCameraMode ? Colors.white : (isDark ? Colors.white.withOpacity(0.4) : AppTheme.silverDark),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Barcode Scan',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: _isCameraMode ? Colors.white : (isDark ? Colors.white.withOpacity(0.4) : AppTheme.silverDark),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ]),
+            ],
+          ),
         ),
       ),
-    ).animate().fadeIn(delay: 200.ms);
+    );
   }
 
   Widget _buildSearchField() {
@@ -522,45 +567,59 @@ class _SearchScreenState extends State<SearchScreen> {
                       const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
-                        child: Text(code, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.6), letterSpacing: 0.5)),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          code,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white.withOpacity(0.6) : Colors.black.withOpacity(0.4),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       ),
                     ]),
                   ),
                   // Price
                   Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                     Text('₹$price', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: textColor)),
-                    Text('YOUR PRICE', style: TextStyle(fontSize: 9, color: subTextColor, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+                    Text('PRICE', style: TextStyle(fontSize: 9, color: subTextColor, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
                   ]),
                 ],
               ),
             ),
-            // Divider
-            Container(height: 1, color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.lightBorder),
-            // Multiple Prices Row
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildPriceItem('Price A', priceA),
-                  _buildPriceItem('Price B', priceB),
-                  _buildPriceItem('Price C', priceC),
-                ],
+            // Only show divider and extended prices if access is granted
+            if (_canSeeExtendedPrices) ...[
+              // Divider
+              Container(height: 1, color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.lightBorder),
+              // Extended Prices Row (B and C)
+              // Extended Prices Row (B and C)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(child: _buildPriceItem('Price B', priceB, center: true)),
+                    Container(width: 1, height: 24, color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
+                    Expanded(child: _buildPriceItem('Price C', priceC, center: true)),
+                  ],
+                ),
               ),
-            ),
+            ],
           ]),
         ),
       ),
     ).animate().fade(delay: Duration(milliseconds: delay > 500 ? 500 : delay), duration: 350.ms).slideY(begin: 0.06, delay: Duration(milliseconds: delay > 500 ? 500 : delay));
   }
 
-  Widget _buildPriceItem(String label, String value) {
+  Widget _buildPriceItem(String label, String value, {bool center = false}) {
     final isDark = context.read<ThemeProvider>().isDark;
     final textColor = isDark ? Colors.white : AppTheme.lightText;
     final subTextColor = isDark ? Colors.white54 : AppTheme.lightSubText;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: center ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       children: [
         Text(label.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: subTextColor, letterSpacing: 1.0)),
         const SizedBox(height: 2),

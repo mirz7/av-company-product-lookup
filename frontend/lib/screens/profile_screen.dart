@@ -1,11 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/theme_provider.dart';
 import '../services/api_service.dart';
+import 'photo_crop_screen.dart';
 import 'search_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -220,26 +220,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _editProfilePhoto() async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-      
-      if (image != null) {
-        setState(() => _isLoading = true);
-        final success = await _apiService.updateProfilePhoto(image.path);
-        if (success) {
-          await _fetchProfile();
-        } else {
-          setState(() => _isLoading = false);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Failed to update profile photo')),
-            );
-          }
+    final croppedPath = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.6),
+      builder: (_) => const PhotoCropScreen(),
+    );
+
+    if (croppedPath != null && mounted) {
+      setState(() => _isLoading = true);
+      final success = await _apiService.updateProfilePhoto(croppedPath);
+      if (success) {
+        await _fetchProfile();
+      } else {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to update profile photo')),
+          );
         }
       }
-    } catch (e) {
-      setState(() => _isLoading = false);
     }
   }
 

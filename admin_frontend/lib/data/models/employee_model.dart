@@ -5,13 +5,17 @@ class Employee {
   final String fullName;
   final String jobRole;
   final bool isActive;
+  final bool isApproved;
   final bool priceBAccess;
   final bool priceCAccess;
   final String permissionLevel;
+  final String? profilePhotoUrl;
 
   Employee({required this.id, required this.username, required this.email,
       required this.fullName, required this.jobRole, required this.isActive,
-      required this.priceBAccess, required this.priceCAccess, required this.permissionLevel});
+      required this.isApproved, required this.priceBAccess,
+      required this.priceCAccess, required this.permissionLevel,
+      this.profilePhotoUrl});
 
   factory Employee.fromJson(Map<String, dynamic> json) {
     final level = json['permission_level']?.toString() ?? 'standard';
@@ -23,9 +27,11 @@ class Employee {
       fullName: fn.isNotEmpty ? fn : json['username'] ?? '',
       jobRole: json['job_role'] ?? json['role'] ?? 'Staff',
       isActive: json['is_active'] ?? false,
+      isApproved: json['is_approved'] ?? false,
       priceBAccess: level == 'discount' || level == 'wholesale' || (json['price_b_access'] ?? false),
       priceCAccess: level == 'wholesale' || (json['price_c_access'] ?? false),
       permissionLevel: level,
+      profilePhotoUrl: json['profile_photo_url']?.toString(),
     );
   }
 }

@@ -7,6 +7,7 @@ import 'screens/login_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/pending_approval_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void main() {
@@ -72,6 +73,7 @@ class StaffApp extends StatelessWidget {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
+        '/pending': (context) => const PendingApprovalScreen(),
         '/search': (context) => const SearchScreen(),
         '/profile': (context) => const ProfileScreen(),
       },

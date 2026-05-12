@@ -8,12 +8,16 @@ class UserProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'Profile Settings'
 
+
+
 class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
 
-# Re-register UserAdmin
+
+#Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):

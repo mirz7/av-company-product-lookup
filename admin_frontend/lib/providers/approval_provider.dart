@@ -37,15 +37,22 @@ class ApprovalProvider extends ChangeNotifier {
 
   Future<void> approveEmployee(int id) async {
     final headers = await _headers();
-    await http.patch(Uri.parse('${ApiConstants.employees}$id/'),
-        headers: headers, body: jsonEncode({'is_active': true}));
+    // Use dedicated approve endpoint
+    await http.post(
+      Uri.parse('${ApiConstants.approvals}$id/approve/'),
+      headers: headers,
+    );
     _pendingApprovals.removeWhere((e) => e.id == id);
     notifyListeners();
   }
 
   Future<void> rejectEmployee(int id) async {
     final headers = await _headers();
-    await http.delete(Uri.parse('${ApiConstants.employees}$id/'), headers: headers);
+    // Use dedicated reject endpoint
+    await http.post(
+      Uri.parse('${ApiConstants.approvals}$id/reject/'),
+      headers: headers,
+    );
     _pendingApprovals.removeWhere((e) => e.id == id);
     notifyListeners();
   }

@@ -38,8 +38,16 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 2500));
     final token = await _apiService.storage.read(key: 'access_token');
     if (!mounted) return;
+
     if (token != null && token.isNotEmpty) {
-      Navigator.pushReplacementNamed(context, '/search');
+      // Token exists — check if admin has approved this employee
+      final profile = await _apiService.getProfile(forceRefresh: true);
+      if (!mounted) return;
+      if (profile != null && profile['is_approved'] == true) {
+        Navigator.pushReplacementNamed(context, '/search');
+      } else {
+        Navigator.pushReplacementNamed(context, '/pending');
+      }
     } else {
       Navigator.pushReplacementNamed(context, '/login');
     }
