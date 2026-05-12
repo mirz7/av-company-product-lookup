@@ -165,13 +165,7 @@ class _PermissionSheetState extends State<_PermissionSheet> {
           ]),
         ]),
         const SizedBox(height: 28),
-        Row(children: [Container(width: 3, height: 14, decoration: BoxDecoration(color: AppTheme.crimson, borderRadius: BorderRadius.circular(2))), const SizedBox(width: 10), Text('USER DETAILS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: sub, letterSpacing: 1.5))]),
-        const SizedBox(height: 14),
-        _detailRow(Icons.email_outlined, 'Email Address', widget.employee.email.isNotEmpty ? widget.employee.email : 'No email provided', textColor, sub),
-        const SizedBox(height: 12),
-        _detailRow(Icons.badge_outlined, 'Job Role', widget.employee.jobRole.isNotEmpty ? widget.employee.jobRole : 'Staff Member', textColor, sub),
-        const SizedBox(height: 28),
-        Row(children: [Container(width: 3, height: 14, decoration: BoxDecoration(color: AppTheme.crimson, borderRadius: BorderRadius.circular(2))), const SizedBox(width: 10), Text('ACCESS CONTROL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: sub, letterSpacing: 1.5))]),
+        Text('ACCESS CONTROL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: sub, letterSpacing: 1.5)),
         const SizedBox(height: 14),
         _toggle(Icons.local_offer_outlined, 'Price A', 'Retail Listing Price', true, null, textColor, sub),
         Divider(height: 24, color: border),
@@ -200,14 +194,5 @@ class _PermissionSheetState extends State<_PermissionSheet> {
     const SizedBox(width: 12),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textColor)), Text(sub, style: TextStyle(fontSize: 11, color: subColor))])),
     Switch(value: value, onChanged: onChange, activeColor: AppTheme.crimson),
-  ]);
-
-  Widget _detailRow(IconData icon, String label, String value, Color textColor, Color subColor) => Row(children: [
-    Container(width: 36, height: 36, decoration: BoxDecoration(color: subColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: subColor, size: 18)),
-    const SizedBox(width: 12),
-    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: subColor)),
-      Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor)),
-    ])),
   ]);
 }

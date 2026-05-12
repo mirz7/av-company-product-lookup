@@ -51,28 +51,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Text('REAL-TIME PERFORMANCE METRICS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: sub, letterSpacing: 1.5)).animate().fadeIn(delay: 150.ms),
                     const SizedBox(height: 20),
                     if (prov.metrics != null) ...[
-                      LayoutBuilder(builder: (context, constraints) {
-                        final width = constraints.maxWidth;
-                        final crossAxisCount = width > 600 ? 4 : 2;
-                        final childAspectRatio = width > 600 ? 1.5 : (width / 2) / 130;
-                        return GridView.count(
-                          crossAxisCount: crossAxisCount,
-                          childAspectRatio: childAspectRatio,
-                          crossAxisSpacing: 14,
-                          mainAxisSpacing: 14,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          children: [
-                            _metric(Icons.people_outline, 'Total Employees', '${prov.metrics!.totalEmployees}', textColor, sub, card, border, 200, onTap: () => context.go(RouteConstants.employees)),
-                            _metric(Icons.inbox_outlined, 'Pending Approvals', '${prov.metrics!.pendingApprovals}', AppTheme.crimsonGlow, sub,
-                                AppTheme.crimson.withOpacity(0.12), AppTheme.crimson.withOpacity(0.3), 250,
-                                badge: prov.metrics!.pendingApprovals > 0 ? '${prov.metrics!.pendingApprovals} NEW' : null,
-                                onTap: () => context.go(RouteConstants.approvals)),
-                            _metric(Icons.inventory_2_outlined, 'Total Products', '${prov.metrics!.totalProducts}', textColor, sub, card, border, 300, onTap: () => context.go(RouteConstants.search)),
-                            _metric(Icons.bolt_outlined, 'Active Sessions', '${prov.metrics!.activeSessions}', textColor, sub, card, border, 350),
-                          ],
-                        );
-                      }),
+                      Row(children: [
+                        Expanded(child: _metric(Icons.people_outline, 'Total Employees', '${prov.metrics!.totalEmployees}', textColor, sub, card, border, 200, onTap: () => context.go(RouteConstants.employees))),
+                        const SizedBox(width: 14),
+                        Expanded(child: _metric(Icons.inbox_outlined, 'Pending Approvals', '${prov.metrics!.pendingApprovals}', AppTheme.crimsonGlow, sub,
+                            AppTheme.crimson.withOpacity(0.12), AppTheme.crimson.withOpacity(0.3), 250,
+                            badge: prov.metrics!.pendingApprovals > 0 ? '${prov.metrics!.pendingApprovals} NEW' : null,
+                            onTap: () => context.go(RouteConstants.approvals))),
+                      ]),
+                      const SizedBox(height: 14),
+                      Row(children: [
+                        Expanded(child: _metric(Icons.inventory_2_outlined, 'Total Products', '${prov.metrics!.totalProducts}', textColor, sub, card, border, 300, onTap: () => context.go(RouteConstants.search))),
+                        const SizedBox(width: 14),
+                        Expanded(child: _metric(Icons.bolt_outlined, 'Active Sessions', '${prov.metrics!.activeSessions}', textColor, sub, card, border, 350)),
+                      ]),
                     ],
                     const SizedBox(height: 28),
                     _sectionHead('Recent Activity', 'View All >', textColor, sub, () => context.go(RouteConstants.employees)).animate().fadeIn(delay: 400.ms),

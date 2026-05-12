@@ -84,11 +84,12 @@ class ProfileScreen extends StatelessWidget {
                   Positioned(bottom: 0, right: 0, child: Container(width: 28, height: 28, decoration: BoxDecoration(color: AppTheme.crimson, shape: BoxShape.circle, border: Border.all(color: isDark ? AppTheme.darkBg1 : AppTheme.lightSurface, width: 2)), child: const Icon(Icons.shield, color: Colors.white, size: 14))),
                 ]),
                 const SizedBox(height: 16),
-                Text(admin?.fullName.isNotEmpty == true ? admin!.fullName : (admin?.username ?? 'Admin User'), textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor)),
+                Text(admin?.fullName.isNotEmpty == true ? admin!.fullName : (admin?.username ?? 'Admin User'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor)),
                 const SizedBox(height: 8),
-                Wrap(alignment: WrapAlignment.center, spacing: 8, runSpacing: 8, children: [
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: AppTheme.crimson.withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.crimson.withOpacity(0.4))),
                     child: const Text('ADMIN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.crimsonGlow, letterSpacing: 1))),
+                  const SizedBox(width: 8),
                   Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.07) : AppTheme.lightBg3, borderRadius: BorderRadius.circular(20), border: Border.all(color: border)),
                     child: Text('@${admin?.username ?? 'admin'}', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: sub, letterSpacing: 1))),
                 ]),
