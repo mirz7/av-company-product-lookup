@@ -17,6 +17,7 @@ class UserProfile(models.Model):
     profile_photo = models.ImageField(upload_to='profiles/', blank=True, null=True)
     searches_today = models.IntegerField(default=0)
     hours_logged = models.DecimalField(max_digits=5, decimal_places=1, default=0.0)
+    is_active = models.BooleanField(default=True) # Custom active status to allow login while restricted
 
     def __str__(self):
         return f"{self.user.username} - Level {self.price_level}"

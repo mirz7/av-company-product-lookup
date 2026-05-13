@@ -46,7 +46,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ['username', 'first_name', 'last_name', 'email', 'role',
                   'phone_number', 'profile_photo', 'profile_photo_url',
                   'price_level', 'searches_today', 'hours_logged',
-                  'total_products', 'is_approved']
+                  'total_products', 'is_approved', 'is_active']
 
     def get_total_products(self, obj):
         from .models import Product
@@ -95,6 +95,7 @@ class AdminEmployeeSerializer(serializers.ModelSerializer):
     price_b_access = serializers.SerializerMethodField()
     price_c_access = serializers.SerializerMethodField()
     is_approved = serializers.SerializerMethodField()
+    is_active = serializers.SerializerMethodField()
     profile_photo_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -133,6 +134,12 @@ class AdminEmployeeSerializer(serializers.ModelSerializer):
             return obj.profile.is_approved
         except Exception:
             return False
+
+    def get_is_active(self, obj):
+        try:
+            return obj.profile.is_active
+        except Exception:
+            return True
 
     def get_profile_photo_url(self, obj):
         request = self.context.get('request')

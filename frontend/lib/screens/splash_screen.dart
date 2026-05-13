@@ -43,10 +43,16 @@ class _SplashScreenState extends State<SplashScreen>
       // Token exists — check if admin has approved this employee
       final profile = await _apiService.getProfile(forceRefresh: true);
       if (!mounted) return;
-      if (profile != null && profile['is_approved'] == true) {
-        Navigator.pushReplacementNamed(context, '/search');
+      if (profile != null) {
+        if (profile['is_active'] == false) {
+          Navigator.pushReplacementNamed(context, '/restricted');
+        } else if (profile['is_approved'] == true) {
+          Navigator.pushReplacementNamed(context, '/search');
+        } else {
+          Navigator.pushReplacementNamed(context, '/pending');
+        }
       } else {
-        Navigator.pushReplacementNamed(context, '/pending');
+        Navigator.pushReplacementNamed(context, '/login');
       }
     } else {
       Navigator.pushReplacementNamed(context, '/login');

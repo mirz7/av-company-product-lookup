@@ -54,10 +54,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       final api = ApiService();
       final profile = await api.getProfile(forceRefresh: true);
       if (!mounted) return;
-      if (profile != null && profile['is_approved'] == true) {
-        Navigator.pushReplacementNamed(context, '/search');
-      } else {
-        Navigator.pushReplacementNamed(context, '/pending');
+      if (profile != null) {
+        if (profile['is_active'] == false) {
+          Navigator.pushReplacementNamed(context, '/restricted');
+        } else if (profile['is_approved'] == true) {
+          Navigator.pushReplacementNamed(context, '/search');
+        } else {
+          Navigator.pushReplacementNamed(context, '/pending');
+        }
       }
     } else {
       _triggerShake();

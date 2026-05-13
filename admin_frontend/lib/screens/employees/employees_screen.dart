@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/employee_provider.dart';
 import '../../data/models/employee_model.dart';
+import '../../data/services/sound_service.dart';
+import '../../core/utils/custom_snack.dart';
 
 void _viewPhoto(BuildContext context, String url, String name, int id) {
   Navigator.push(context, PageRouteBuilder(
@@ -280,24 +282,21 @@ class _PermissionSheetState extends State<_PermissionSheet> {
       }
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(children: [
-              const Icon(Icons.check_circle, color: Colors.white, size: 16),
-              const SizedBox(width: 8),
-              Text('Settings saved for ${widget.employee.fullName}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-            ]),
-            backgroundColor: AppTheme.primary,
-            duration: const Duration(milliseconds: 800),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
+        SoundService.playAction();
+        CustomSnack.show(
+          context,
+          message: 'Settings saved for ${widget.employee.fullName}',
+          icon: Icons.settings_backup_restore_rounded,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save settings')));
+        CustomSnack.show(
+          context,
+          message: 'Failed to save settings',
+          icon: Icons.error_outline,
+          color: AppTheme.danger,
+        );
       }
     }
   }
@@ -321,12 +320,7 @@ class _PermissionSheetState extends State<_PermissionSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: AppTheme.danger.withOpacity(0.1), shape: BoxShape.circle),
-                child: const Icon(Icons.delete_forever_rounded, color: AppTheme.danger, size: 32),
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               Text('Delete Account?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: isDark ? Colors.white : AppTheme.lightText)),
               const SizedBox(height: 12),
               Text(

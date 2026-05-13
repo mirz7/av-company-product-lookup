@@ -8,6 +8,8 @@ import '../services/api_service.dart';
 import 'photo_crop_screen.dart';
 import 'search_screen.dart';
 
+import '../services/status_checker.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -15,7 +17,7 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserver {
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
   Map<String, dynamic>? _profileData;
@@ -23,7 +25,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _fetchProfile();
+    // Initial status check
+    StatusChecker.checkAndRedirect();
   }
 
   Future<void> _fetchProfile({bool forceRefresh = false}) async {
@@ -313,6 +318,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      StatusChecker.checkAndRedirect();
+    }
   }
 
   @override

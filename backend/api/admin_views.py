@@ -133,9 +133,9 @@ class AdminEmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
         # Handle is_active updates
         if 'is_active' in data:
             new_status = data['is_active']
-            if user.is_active != new_status:
-                user.is_active = new_status
-                user.save()
+            if user.profile.is_active != new_status:
+                user.profile.is_active = new_status
+                user.profile.save()
                 ActivityLog.objects.create(
                     activity_type='profile_update',
                     title=f'Status changed: {full_name}',

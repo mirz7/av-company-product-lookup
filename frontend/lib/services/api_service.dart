@@ -209,10 +209,19 @@ class ApiService {
           if (response.statusCode == 200) {
             _profileCache = jsonDecode(response.body);
             
+            // If the account is restricted (custom flag), don't mask it with cache
+            if (_profileCache?['is_active'] == false) {
+              // We keep it in cache but we'll handle redirection in the UI
+            }
+
             try {
               final prefs = await SharedPreferences.getInstance();
               await prefs.setString('cached_profile', jsonEncode(_profileCache));
             } catch (_) {}
+          } else if (response.statusCode == 401 || response.statusCode == 403) {
+            // User was likely deleted or system-disabled
+            await logout();
+            return null;
           } else {
             throw Exception('Server returned ${response.statusCode}');
           }

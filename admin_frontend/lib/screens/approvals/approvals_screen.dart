@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/approval_provider.dart';
 import '../../data/models/employee_model.dart';
+import '../../data/services/sound_service.dart';
+import '../../core/utils/custom_snack.dart';
 
 class ApprovalsScreen extends StatefulWidget {
   const ApprovalsScreen({super.key});
@@ -179,17 +181,15 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
               await prov.approveEmployee(emp.id);
               HapticFeedback.mediumImpact();
               SystemSound.play(SystemSoundType.click);
-              if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                content: Row(children: [
-                  const Icon(Icons.verified_user, color: Colors.white, size: 20),
-                  const SizedBox(width: 12),
-                  Text('${emp.fullName} approved!', style: const TextStyle(fontWeight: FontWeight.w800)),
-                ]),
-                backgroundColor: AppTheme.success,
-                behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ));
+              if (ctx.mounted) {
+                SoundService.playSuccess();
+                CustomSnack.show(
+                  ctx,
+                  message: '${emp.fullName} approved!',
+                  icon: Icons.verified_user_rounded,
+                  color: AppTheme.primary,
+                );
+              }
             },
             icon: const Icon(Icons.check_rounded, size: 18),
             label: const Text('Approve', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
@@ -209,7 +209,17 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                 title: const Text('Reject Employee'), content: Text('Reject ${emp.fullName}?'),
                 actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')), TextButton(onPressed: () => Navigator.pop(c, true), style: TextButton.styleFrom(foregroundColor: AppTheme.danger), child: const Text('Reject'))],
               ));
-              if (ok == true && ctx.mounted) { await prov.rejectEmployee(emp.id); if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Employee rejected.'), backgroundColor: AppTheme.danger, behavior: SnackBarBehavior.floating)); }
+              if (ok == true && ctx.mounted) { 
+                await prov.rejectEmployee(emp.id); 
+                if (ctx.mounted) {
+                  CustomSnack.show(
+                    ctx,
+                    message: 'Employee rejected.',
+                    icon: Icons.person_remove_rounded,
+                    color: AppTheme.danger,
+                  );
+                }
+              }
             },
             icon: const Icon(Icons.close_rounded, size: 18),
             label: const Text('Reject', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),

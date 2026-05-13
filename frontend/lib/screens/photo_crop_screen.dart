@@ -136,7 +136,7 @@ class _PhotoCropScreenState extends State<PhotoCropScreen> {
     // This screen is used as a bottom sheet launcher — it shows the source picker
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+        color: isDark ? const Color(0xFF0D0D12) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 36),
@@ -204,7 +204,7 @@ class _PhotoCropScreenState extends State<PhotoCropScreen> {
             icon: Icons.photo_library_outlined,
             label: 'Choose from Gallery',
             subtitle: 'Browse your photos',
-            color: const Color(0xFF2563EB),
+            color: const Color(0xFF9E2016),
             isDark: isDark,
             onTap: _isProcessing ? null : _pickFromGallery,
             delay: 260,
@@ -348,7 +348,7 @@ class _SourceButtonState extends State<_SourceButton> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: widget.isDark ? const Color(0xFF2D2D44) : Colors.white,
+            color: widget.isDark ? const Color(0xFF1A1A2A) : Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: widget.isDark 

@@ -8,6 +8,7 @@ import 'screens/search_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/pending_approval_screen.dart';
+import 'screens/restricted_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void main() {
@@ -23,6 +24,7 @@ void main() {
 }
 
 class StaffApp extends StatelessWidget {
+  static final navigatorKey = GlobalKey<NavigatorState>();
   const StaffApp({super.key});
 
   TextTheme _buildTextTheme(TextTheme base) =>
@@ -63,6 +65,7 @@ class StaffApp extends StatelessWidget {
     );
 
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'AV & Company Staff App',
       debugShowCheckedModeBanner: false,
       theme: lightTheme,
@@ -74,6 +77,7 @@ class StaffApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/pending': (context) => const PendingApprovalScreen(),
+        '/restricted': (context) => const RestrictedScreen(),
         '/search': (context) => const SearchScreen(),
         '/profile': (context) => const ProfileScreen(),
       },

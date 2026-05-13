@@ -7,6 +7,8 @@ import '../services/api_service.dart';
 import '../providers/theme_provider.dart';
 import 'profile_screen.dart';
 
+import '../services/status_checker.dart';
+
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
@@ -14,7 +16,7 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver {
   final _searchController = TextEditingController();
   final ApiService _apiService = ApiService();
   bool _isSearching = false;
@@ -29,8 +31,11 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadInitialProducts();
     _fetchTotalProducts();
+    // Initial status check
+    StatusChecker.checkAndRedirect();
   }
 
   Future<void> _fetchTotalProducts() async {
@@ -97,9 +102,17 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _cameraController?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      StatusChecker.checkAndRedirect();
+    }
   }
 
   @override
