@@ -42,7 +42,7 @@ class AppTheme {
 
 class ThemeProvider extends ChangeNotifier {
   static const _key = 'admin_theme_mode';
-  bool _isDark = true;
+  bool _isDark = false;
 
   bool get isDark => _isDark;
   ThemeMode get themeMode => _isDark ? ThemeMode.dark : ThemeMode.light;
@@ -51,7 +51,7 @@ class ThemeProvider extends ChangeNotifier {
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    _isDark = prefs.getBool(_key) ?? true;
+    _isDark = prefs.getBool(_key) ?? false;
     notifyListeners();
   }
 

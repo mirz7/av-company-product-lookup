@@ -188,6 +188,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                   message: '${emp.fullName} approved!',
                   icon: Icons.verified_user_rounded,
                   color: AppTheme.primary,
+                  duration: const Duration(seconds: 1),
                 );
               }
             },
@@ -217,6 +218,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                     message: 'Employee rejected.',
                     icon: Icons.person_remove_rounded,
                     color: AppTheme.danger,
+                    duration: const Duration(seconds: 1),
                   );
                 }
               }

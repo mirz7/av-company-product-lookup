@@ -71,15 +71,15 @@ class _RestrictedScreenState extends State<RestrictedScreen> with TickerProvider
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeProvider>().isDark;
     final bg = isDark
-        ? [AppTheme.darkBg1, AppTheme.darkBg2, const Color(0xFF3D1010)]
-        : [AppTheme.lightBg1, AppTheme.lightBg2, const Color(0xFFF0D8D0)];
+        ? [AppTheme.darkBg1, AppTheme.darkBg2, const Color(0xFF161624)]
+        : [AppTheme.lightBg1, AppTheme.lightBg2, const Color(0xFFE2E2EA)];
     final textColor = isDark ? Colors.white : AppTheme.lightText;
     final sub = isDark ? Colors.white54 : AppTheme.lightSubText;
     final card = isDark ? Colors.white.withOpacity(0.07) : Colors.white.withOpacity(0.7);
     final border = isDark ? Colors.white.withOpacity(0.10) : AppTheme.lightBorder;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF3D1010) : const Color(0xFFF0D8D0),
+      backgroundColor: isDark ? const Color(0xFF161624) : const Color(0xFFE2E2EA),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: bg, begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: const [0.0, 0.5, 1.0]),
@@ -94,7 +94,7 @@ class _RestrictedScreenState extends State<RestrictedScreen> with TickerProvider
                 width: 260, height: 260,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF9E2016).withOpacity(0.1 + _pulseController.value * 0.05),
+                  color: (isDark ? const Color(0xFF8B9BAE) : const Color(0xFF9E2016)).withOpacity(0.08 + _pulseController.value * 0.04),
                 ),
               ),
             ),
@@ -147,14 +147,14 @@ class _RestrictedScreenState extends State<RestrictedScreen> with TickerProvider
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF9E2016).withOpacity(0.15),
+                          color: (isDark ? Colors.white : const Color(0xFF9E2016)).withOpacity(0.08),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFF9E2016).withOpacity(0.4)),
+                          border: Border.all(color: (isDark ? Colors.white : const Color(0xFF9E2016)).withOpacity(0.2)),
                         ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF9E2016), shape: BoxShape.circle)),
+                          Container(width: 6, height: 6, decoration: BoxDecoration(color: isDark ? Colors.white70 : const Color(0xFF9E2016), shape: BoxShape.circle)),
                           const SizedBox(width: 8),
-                          const Text('ACCESS RESTRICTED', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF9E2016), letterSpacing: 1.5)),
+                          Text('ACCESS RESTRICTED', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: isDark ? Colors.white70 : const Color(0xFF9E2016), letterSpacing: 1.5)),
                         ]),
                       ),
                       const SizedBox(height: 20),

@@ -134,12 +134,13 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
           ),
         ),
         child: SafeArea(
+          bottom: false,
           child: Column(
             children: [
               _buildAppBar(),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 40), // Increased bottom padding
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -172,7 +173,6 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                           },
                         ),
                       ],
-                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
@@ -673,37 +673,42 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
         border: Border(top: BorderSide(color: borderColor)),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.4 : 0.1), blurRadius: 20, offset: const Offset(0, -4))],
       ),
-      padding: const EdgeInsets.only(bottom: 8, top: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: _navItem(
-              icon: Icons.search_rounded,
-              label: 'SEARCH',
-              isActive: true,
-              onTap: () {},
-              isDark: isDark,
-            ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 12, top: 12), // Balanced padding
+          child: Row(
+            children: [
+              Expanded(
+                child: _navItem(
+                  icon: Icons.search_rounded,
+                  label: 'SEARCH',
+                  isActive: true,
+                  onTap: () {},
+                  isDark: isDark,
+                ),
+              ),
+              Expanded(
+                child: _navItem(
+                  icon: Icons.person_rounded,
+                  label: 'MY SPACE',
+                  isActive: false,
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => const ProfileScreen(),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    );
+                  },
+                  isDark: isDark,
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: _navItem(
-              icon: Icons.person_rounded,
-              label: 'MY SPACE',
-              isActive: false,
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (_, __, ___) => const ProfileScreen(),
-                    transitionDuration: Duration.zero,
-                    reverseTransitionDuration: Duration.zero,
-                  ),
-                );
-              },
-              isDark: isDark,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ class CustomSnack {
     required String message,
     required IconData icon,
     Color? color,
+    Duration duration = const Duration(milliseconds: 1500),
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = color ?? AppTheme.primary;
@@ -75,7 +76,7 @@ class CustomSnack {
           ),
         ),
         backgroundColor: Colors.transparent,
-        duration: const Duration(milliseconds: 2800),
+        duration: duration,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         elevation: 0,

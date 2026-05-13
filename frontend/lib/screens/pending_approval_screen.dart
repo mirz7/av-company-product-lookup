@@ -74,15 +74,15 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen>
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeProvider>().isDark;
     final bg = isDark
-        ? [AppTheme.darkBg1, AppTheme.darkBg2, const Color(0xFF2A0D0D)]
-        : [AppTheme.lightBg1, AppTheme.lightBg2, const Color(0xFFE8D0C8)];
+        ? [AppTheme.darkBg1, AppTheme.darkBg2, const Color(0xFF12121F)]
+        : [AppTheme.lightBg1, AppTheme.lightBg2, const Color(0xFFDED8D0)];
     final textColor = isDark ? Colors.white : AppTheme.lightText;
     final sub = isDark ? Colors.white54 : AppTheme.lightSubText;
     final card = isDark ? Colors.white.withOpacity(0.07) : Colors.white.withOpacity(0.7);
     final border = isDark ? Colors.white.withOpacity(0.10) : AppTheme.lightBorder;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF2A0D0D) : const Color(0xFFE8D0C8),
+      backgroundColor: isDark ? const Color(0xFF12121F) : const Color(0xFFDED8D0),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: bg, begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: const [0.0, 0.5, 1.0]),
@@ -97,7 +97,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen>
                 width: 260, height: 260,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF9E2016).withOpacity(0.06 + _pulseController.value * 0.05),
+                  color: (isDark ? const Color(0xFF8B9BAE) : const Color(0xFF9E2016)).withOpacity(0.05 + _pulseController.value * 0.03),
                 ),
               ),
             ),
@@ -150,8 +150,8 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen>
                     width: 96, height: 96,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const SweepGradient(colors: [Color(0xFF9E2016), Color(0xFFFF6B6B), Color(0xFF9E2016)]),
-                      boxShadow: [BoxShadow(color: const Color(0xFF9E2016).withOpacity(0.4), blurRadius: 24, spreadRadius: 4)],
+                      gradient: LinearGradient(colors: [isDark ? const Color(0xFF5A6A78) : const Color(0xFF8B9BAE), isDark ? const Color(0xFF8B9BAE) : Colors.white]),
+                      boxShadow: [BoxShadow(color: (isDark ? Colors.black : const Color(0xFF8B9BAE)).withOpacity(0.3), blurRadius: 24, spreadRadius: 4)],
                     ),
                     child: const Center(child: Icon(Icons.hourglass_top_rounded, color: Colors.white, size: 44)),
                   ),
@@ -177,9 +177,9 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen>
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFB74D).withOpacity(0.15),
+                          color: const Color(0xFFFFB74D).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.4)),
+                          border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
                         ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
                           Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFFFFB74D), shape: BoxShape.circle)),

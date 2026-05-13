@@ -287,6 +287,7 @@ class _PermissionSheetState extends State<_PermissionSheet> {
           context,
           message: 'Settings saved for ${widget.employee.fullName}',
           icon: Icons.settings_backup_restore_rounded,
+          duration: const Duration(seconds: 1),
         );
       }
     } catch (e) {

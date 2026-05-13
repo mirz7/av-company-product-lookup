@@ -149,3 +149,9 @@ class AdminEmployeeSerializer(serializers.ModelSerializer):
         except Exception:
             pass
         return None
+from .models import FCMToken
+
+class FCMTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FCMToken
+        fields = ['token']

@@ -100,3 +100,12 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"[{self.activity_type}] {self.title}"
+class FCMToken(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='fcm_tokens')
+    token = models.CharField(max_length=500, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f'{self.user.username} - {self.token[:20]}...'

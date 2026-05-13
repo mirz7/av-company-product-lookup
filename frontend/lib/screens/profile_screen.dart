@@ -356,6 +356,7 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
           ),
         ),
         child: SafeArea(
+          bottom: false,
           child: _isLoading
               ? const SizedBox.shrink()
               : Column(
@@ -755,39 +756,44 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
         border: Border(top: BorderSide(color: borderColor)),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.4 : 0.1), blurRadius: 20, offset: const Offset(0, -4))],
       ),
-      padding: const EdgeInsets.only(bottom: 8, top: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: _navItem(
-              context: context,
-              icon: Icons.search_rounded,
-              label: 'SEARCH',
-              isActive: false,
-              isDark: isDark,
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (_, __, ___) => const SearchScreen(),
-                    transitionDuration: Duration.zero,
-                    reverseTransitionDuration: Duration.zero,
-                  ),
-                );
-              },
-            ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 12, top: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: _navItem(
+                  context: context,
+                  icon: Icons.search_rounded,
+                  label: 'SEARCH',
+                  isActive: false,
+                  isDark: isDark,
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => const SearchScreen(),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Expanded(
+                child: _navItem(
+                  context: context,
+                  icon: Icons.person_rounded,
+                  label: 'MY SPACE',
+                  isActive: true,
+                  isDark: isDark,
+                  onTap: () {},
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: _navItem(
-              context: context,
-              icon: Icons.person_rounded,
-              label: 'MY SPACE',
-              isActive: true,
-              isDark: isDark,
-              onTap: () {},
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
