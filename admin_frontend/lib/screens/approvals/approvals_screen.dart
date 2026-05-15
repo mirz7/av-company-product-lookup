@@ -28,15 +28,14 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
         : [AppTheme.lightBg1, AppTheme.lightBg2, const Color(0xFFCFBBAA)];
     final textColor = isDark ? Colors.white : AppTheme.lightText;
     final sub = isDark ? Colors.white54 : AppTheme.lightSubText;
-    final card = isDark ? Colors.white.withOpacity(0.06) : Colors.white.withOpacity(0.8);
-    final border = isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBorder;
+    final card = isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.8);
+    final border = isDark ? Colors.white.withValues(alpha: 0.08) : AppTheme.lightBorder;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF2D1010) : const Color(0xFFCFBBAA),
       body: Container(
         decoration: BoxDecoration(gradient: LinearGradient(colors: bg, begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: const [0.0, 0.5, 1.0])),
         child: SafeArea(child: Column(children: [
-          // Header
           // Header
           Padding(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Row(children: [
@@ -45,7 +44,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                  boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+                  boxShadow: [BoxShadow(color: AppTheme.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
@@ -64,9 +63,9 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: AppTheme.danger.withOpacity(0.15),
+                  color: AppTheme.danger.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.danger.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.danger.withValues(alpha: 0.3)),
                 ),
                 child: Text('${prov.pendingCount} PENDING', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.danger, letterSpacing: 0.5)),
               ),
@@ -77,16 +76,16 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
             : RefreshIndicator(color: AppTheme.primary, onRefresh: () => prov.fetchApprovals(), child: prov.pendingApprovals.isEmpty
                 ? Center(
                     child: Padding(
-                      padding: const EdgeInsets.only(bottom: 60), // Lifted up for visual balance
+                      padding: const EdgeInsets.only(bottom: 60),
                       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Container(
                           width: 100, height: 100,
                           decoration: BoxDecoration(
-                            color: AppTheme.accent.withOpacity(0.08),
+                            color: AppTheme.accent.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppTheme.accent.withOpacity(0.15), width: 2),
+                            border: Border.all(color: AppTheme.accent.withValues(alpha: 0.15), width: 2),
                           ),
-                          child: Icon(Icons.check_circle_rounded, size: 50, color: AppTheme.accent.withOpacity(0.8)),
+                          child: Icon(Icons.check_circle_rounded, size: 50, color: AppTheme.accent.withValues(alpha: 0.8)),
                         ),
                         const SizedBox(height: 24),
                         Text('All caught up!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textColor, letterSpacing: -0.5)),
@@ -128,16 +127,16 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
         color: card,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: border),
-        boxShadow: isDark ? [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 3))] : [],
+        boxShadow: isDark ? [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 3))] : [],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(
             width: 52, height: 52,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [ac, ac.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              gradient: LinearGradient(colors: [ac, ac.withValues(alpha: 0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
               borderRadius: BorderRadius.circular(14),
-              boxShadow: [BoxShadow(color: ac.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))],
+              boxShadow: [BoxShadow(color: ac.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))],
             ),
             child: Center(child: Text(initialText.isEmpty ? '??' : initialText, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18))),
           ),
@@ -145,12 +144,12 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(emp.fullName, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: textColor)),
             const SizedBox(height: 2),
-            Text('@${emp.username}', style: TextStyle(fontSize: 12, color: AppTheme.primary.withOpacity(0.8))),
+            Text('@${emp.username}', style: TextStyle(fontSize: 12, color: AppTheme.primary.withValues(alpha: 0.8))),
           ])),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppTheme.warning.withOpacity(0.12),
+              color: AppTheme.warning.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -198,7 +197,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
               backgroundColor: AppTheme.primary,
               foregroundColor: Colors.white,
               elevation: 6,
-              shadowColor: AppTheme.primary.withOpacity(0.4),
+              shadowColor: AppTheme.primary.withValues(alpha: 0.4),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(vertical: 13),
             ),

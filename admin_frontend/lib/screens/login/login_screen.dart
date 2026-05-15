@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/route_constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../data/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,6 +31,23 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   void dispose() { _userCtrl.dispose(); _passCtrl.dispose(); _pulse.dispose(); super.dispose(); }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkSetup();
+  }
+
+  Future<void> _checkSetup() async {
+    try {
+      final needed = await AuthService().isAdminSetupNeeded();
+      if (needed && mounted) {
+        context.go(RouteConstants.register);
+      }
+    } catch (e) {
+      debugPrint('Setup check failed: $e');
+    }
+  }
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
     final auth = Provider.of<AuthProvider>(context, listen: false);
@@ -46,8 +64,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         : [AppTheme.lightBg1, AppTheme.lightBg2, const Color(0xFFCFBBAA)];
     final textColor = isDark ? Colors.white : AppTheme.lightText;
     final sub = isDark ? Colors.white54 : AppTheme.lightSubText;
-    final card = isDark ? Colors.white.withOpacity(0.06) : Colors.white.withOpacity(0.7);
-    final border = isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBorder;
+    final card = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.7);
+    final border = isDark ? Colors.white.withValues(alpha: 0.08) : AppTheme.lightBorder;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF2D1010) : const Color(0xFFCFBBAA),
@@ -98,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     return Container(
                       margin: const EdgeInsets.only(bottom: 20),
                       padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: AppTheme.danger.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.danger.withOpacity(0.3))),
+                      decoration: BoxDecoration(color: AppTheme.danger.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.danger.withValues(alpha: 0.3))),
                       child: Row(children: [
                         const Icon(Icons.error_outline, color: AppTheme.danger, size: 18),
                         const SizedBox(width: 10),
@@ -119,12 +137,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     GestureDetector(onTap: () => setState(() => _rememberMe = !_rememberMe), child: Row(children: [
                       AnimatedContainer(duration: 200.ms, width: 20, height: 20,
-                        decoration: BoxDecoration(color: _rememberMe ? AppTheme.primary : Colors.transparent, borderRadius: BorderRadius.circular(6), border: Border.all(color: _rememberMe ? AppTheme.primary : sub.withOpacity(0.4), width: 1.5)),
+                        decoration: BoxDecoration(color: _rememberMe ? AppTheme.primary : Colors.transparent, borderRadius: BorderRadius.circular(6), border: Border.all(color: _rememberMe ? AppTheme.primary : sub.withValues(alpha: 0.4), width: 1.5)),
                         child: _rememberMe ? const Icon(Icons.check, color: Colors.white, size: 13) : null),
                       const SizedBox(width: 8),
                       Text('Remember me', style: TextStyle(fontSize: 13, color: sub)),
                     ])),
-                    Text('Forgot password?', style: TextStyle(fontSize: 13, color: sub, decoration: TextDecoration.underline, decorationColor: sub.withOpacity(0.3))),
+                    GestureDetector(
+                      onTap: () => context.push(RouteConstants.forgotPassword),
+                      child: Text('Forgot password?', style: TextStyle(fontSize: 13, color: sub, decoration: TextDecoration.underline, decorationColor: sub.withValues(alpha: 0.3))),
+                    ),
                   ]).animate().fadeIn(delay: 550.ms),
                   
                   const SizedBox(height: 32),
@@ -136,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         backgroundColor: AppTheme.primary,
                         foregroundColor: Colors.white,
                         elevation: 8,
-                        shadowColor: AppTheme.primary.withOpacity(0.4),
+                        shadowColor: AppTheme.primary.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       child: auth.isLoading
@@ -146,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   )).animate().fadeIn(delay: 600.ms),
                   
                   const SizedBox(height: 32),
-                  Center(child: Text('Secure Internal Access Only © 2025', style: TextStyle(fontSize: 11, color: sub.withOpacity(0.4)))).animate().fadeIn(delay: 700.ms),
+                  Center(child: Text('Secure Internal Access Only © 2025', style: TextStyle(fontSize: 11, color: sub.withValues(alpha: 0.4)))).animate().fadeIn(delay: 700.ms),
                   const SizedBox(height: 20),
                 ])),
               ),

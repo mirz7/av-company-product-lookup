@@ -9,7 +9,6 @@ class CustomSnack {
     Color? color,
     Duration duration = const Duration(milliseconds: 1500),
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = color ?? AppTheme.primary;
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -21,12 +20,12 @@ class CustomSnack {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: bg.withOpacity(0.85),
+                color: bg.withValues(alpha: 0.85),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                    color: bg.withOpacity(0.3),
+                    color: bg.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   )
@@ -37,7 +36,7 @@ class CustomSnack {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(icon, color: Colors.white, size: 22),
@@ -61,7 +60,7 @@ class CustomSnack {
                         Text(
                           'ACTION COMPLETED',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.6),
                             fontSize: 9,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,

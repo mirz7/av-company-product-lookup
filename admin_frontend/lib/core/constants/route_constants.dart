@@ -6,4 +6,7 @@ class RouteConstants {
   static const String employees = '/employees';
   static const String approvals = '/approvals';
   static const String profile = '/profile';
+  static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
+  static const String resetPassword = '/reset-password';
 }

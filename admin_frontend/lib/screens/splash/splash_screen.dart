@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/route_constants.dart';
+import '../../data/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -28,6 +29,18 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   Future<void> _check() async {
     await Future.delayed(const Duration(milliseconds: 2500));
     if (!mounted) return;
+    
+    // Check if initial setup is needed
+    final authService = AuthService();
+    final setupNeeded = await authService.isAdminSetupNeeded();
+    
+    if (!mounted) return;
+    
+    if (setupNeeded) {
+      context.go(RouteConstants.register);
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
     if (!mounted) return;

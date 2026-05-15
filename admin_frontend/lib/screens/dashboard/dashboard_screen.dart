@@ -22,7 +22,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dashboardProv = Provider.of<DashboardProvider>(context, listen: false);
-      final notificationProv = Provider.of<NotificationProvider>(context, listen: false);
       
       dashboardProv.fetchMetrics();
       dashboardProv.startPolling();
@@ -56,8 +55,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         : [AppTheme.lightBg1, AppTheme.lightBg2, const Color(0xFFCFBBAA)];
     final textColor = isDark ? Colors.white : AppTheme.lightText;
     final sub = isDark ? Colors.white54 : AppTheme.lightSubText;
-    final card = isDark ? Colors.white.withOpacity(0.06) : Colors.white.withOpacity(0.8);
-    final border = isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBorder;
+    final card = isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.8);
+    final border = isDark ? Colors.white.withValues(alpha: 0.08) : AppTheme.lightBorder;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF2D1010) : const Color(0xFFCFBBAA),
@@ -65,98 +64,149 @@ class _DashboardScreenState extends State<DashboardScreen> {
         decoration: BoxDecoration(gradient: LinearGradient(colors: bg, begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: const [0.0, 0.5, 1.0])),
         child: SafeArea(child: Column(children: [
           _header(textColor, sub, context, isDark).animate().fadeIn(delay: 50.ms).slideY(begin: 0.05),
-          Expanded(child: prov.isLoading
-              ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-              : RefreshIndicator(color: AppTheme.primary, onRefresh: () async { prov.fetchMetrics(); approvals.fetchApprovals(); },
-                  child: SingleChildScrollView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Operational Hub', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textColor)).animate().fadeIn(delay: 100.ms).slideY(begin: 0.05),
-                    const SizedBox(height: 4),
-                    Text('Real-time Performance Metrics', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: sub, letterSpacing: 0.5)).animate().fadeIn(delay: 150.ms),
-                    const SizedBox(height: 22),
-                    // Approval Alert Banner
-                    if (prov.metrics != null && prov.metrics!.pendingApprovals > 0)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 24),
-                        child: GestureDetector(
-                          onTap: () => context.go(RouteConstants.approvals),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [AppTheme.warning.withOpacity(0.15), AppTheme.warning.withOpacity(0.05)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppTheme.warning.withOpacity(0.3)),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(color: AppTheme.warning.withOpacity(0.2), shape: BoxShape.circle),
-                                  child: const Icon(Icons.notification_important_rounded, color: AppTheme.warning, size: 20),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('New Registrations', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14)),
-                                      const SizedBox(height: 2),
-                                      Text('${prov.metrics!.pendingApprovals} staff members are awaiting your approval.', 
-                                        style: TextStyle(color: sub, fontSize: 12)),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(Icons.chevron_right_rounded, color: AppTheme.warning),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ).animate().fadeIn().shake(delay: 500.ms),
-                    if (prov.metrics != null) ...[
-                      Row(children: [
-                        Expanded(child: _metric(Icons.people_outline, 'Total Employees', '${prov.metrics!.totalEmployees}', textColor, sub, card, border, 200, isDark, onTap: () => context.go(RouteConstants.employees))),
-                        const SizedBox(width: 14),
-                        Expanded(child: _metric(Icons.inbox_outlined, 'Pending Approvals', '${prov.metrics!.pendingApprovals}', AppTheme.warning, sub,
-                            isDark ? AppTheme.warning.withOpacity(0.08) : AppTheme.warning.withOpacity(0.12),
-                            AppTheme.warning.withOpacity(0.2), 250, isDark,
-                            badge: prov.metrics!.pendingApprovals > 0 ? '${prov.metrics!.pendingApprovals}' : null,
-                            onTap: () => context.go(RouteConstants.approvals))),
-                      ]),
-                      const SizedBox(height: 14),
-                      Row(children: [
-                        Expanded(child: _metric(Icons.inventory_2_outlined, 'Total Products', '${prov.metrics!.totalProducts}', textColor, sub, card, border, 300, isDark, onTap: () => context.go(RouteConstants.search))),
-                        const SizedBox(width: 14),
-                        Expanded(child: _metric(Icons.bolt_outlined, 'Active Sessions', '${prov.metrics!.activeSessions}', AppTheme.accent, sub,
-                            isDark ? AppTheme.accent.withOpacity(0.08) : AppTheme.accent.withOpacity(0.12),
-                            AppTheme.accent.withOpacity(0.2), 350, isDark)),
-                      ]),
-                    ],
-                    const SizedBox(height: 30),
-                    _sectionHead('Recent Activity', 'View All ›', textColor, sub, () => context.go(RouteConstants.employees)).animate().fadeIn(delay: 400.ms),
-                    const SizedBox(height: 14),
-                    // Real activity feed
-                    if (prov.metrics != null && prov.metrics!.recentActivity.isEmpty)
-                      _emptyActivity(sub, card, border)
-                    else if (prov.metrics != null)
-                      ...prov.metrics!.recentActivity.asMap().entries.map((entry) {
-                        final item = entry.value;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _activity(
-                            _iconForType(item.type),
-                            item.title,
-                            item.subtitle.isNotEmpty ? item.subtitle : _relativeTime(item.timestamp),
-                            card, border, textColor, sub, 450 + entry.key * 50, isDark,
-                            timeLabel: _relativeTime(item.timestamp),
-                          ),
-                        );
-                      }),
-                    const SizedBox(height: 20),
-                  ])))),
+          Expanded(child: _buildBody(prov, approvals, textColor, sub, card, border, isDark)),
         ])),
+      ),
+    );
+  }
+
+  Widget _buildBody(DashboardProvider prov, ApprovalProvider approvals, Color textColor, Color sub, Color card, Color border, bool isDark) {
+    if (prov.isLoading && prov.metrics == null) {
+      return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
+    }
+
+    if (prov.errorMessage != null && prov.metrics == null) {
+      return Center(
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.cloud_off_rounded, size: 64, color: sub.withValues(alpha: 0.5)),
+          const SizedBox(height: 16),
+          Text('Connection Error', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(prov.errorMessage!, textAlign: TextAlign.center, style: TextStyle(color: sub, fontSize: 13)),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => prov.fetchMetrics(),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
+            child: const Text('Try Again'),
+          ),
+        ]),
+      );
+    }
+
+    return RefreshIndicator(
+      color: AppTheme.primary,
+      onRefresh: () async { 
+        await prov.fetchMetrics(); 
+        await approvals.fetchApprovals(); 
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Operational Hub', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textColor)).animate().fadeIn(delay: 100.ms).slideY(begin: 0.05),
+          const SizedBox(height: 4),
+          Text('Real-time Performance Metrics', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: sub, letterSpacing: 0.5)).animate().fadeIn(delay: 150.ms),
+          const SizedBox(height: 22),
+          
+          if (prov.errorMessage != null)
+            Container(
+              margin: const EdgeInsets.only(bottom: 20),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: AppTheme.danger.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+              child: Row(children: [
+                const Icon(Icons.error_outline, color: AppTheme.danger, size: 16),
+                const SizedBox(width: 10),
+                Expanded(child: Text('Live sync failed: ${prov.errorMessage}', style: const TextStyle(color: AppTheme.danger, fontSize: 12))),
+              ]),
+            ).animate().shake(),
+
+          // Approval Alert Banner
+          if (prov.metrics != null && prov.metrics!.pendingApprovals > 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: GestureDetector(
+                onTap: () => context.go(RouteConstants.approvals),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppTheme.warning.withValues(alpha: 0.15), AppTheme.warning.withValues(alpha: 0.05)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: AppTheme.warning.withValues(alpha: 0.2), shape: BoxShape.circle),
+                        child: const Icon(Icons.notification_important_rounded, color: AppTheme.warning, size: 20),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('New Registrations', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                            const SizedBox(height: 2),
+                            Text('${prov.metrics!.pendingApprovals} staff members are awaiting your approval.', 
+                              style: TextStyle(color: sub, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded, color: AppTheme.warning),
+                    ],
+                  ),
+                ),
+              ),
+            ).animate().fadeIn().shake(delay: 500.ms),
+
+          if (prov.metrics != null) ...[
+            Row(children: [
+              Expanded(child: _metric(Icons.people_outline, 'Total Employees', '${prov.metrics!.totalEmployees}', textColor, sub, card, border, 200, isDark, onTap: () => context.go(RouteConstants.employees))),
+              const SizedBox(width: 14),
+              Expanded(child: _metric(Icons.inbox_outlined, 'Pending Approvals', '${prov.metrics!.pendingApprovals}', AppTheme.warning, sub,
+                  isDark ? AppTheme.warning.withValues(alpha: 0.08) : AppTheme.warning.withValues(alpha: 0.12),
+                  AppTheme.warning.withValues(alpha: 0.2), 250, isDark,
+                  badge: prov.metrics!.pendingApprovals > 0 ? '${prov.metrics!.pendingApprovals}' : null,
+                  onTap: () => context.go(RouteConstants.approvals))),
+            ]),
+            const SizedBox(height: 14),
+            Row(children: [
+              Expanded(child: _metric(Icons.inventory_2_outlined, 'Total Products', '${prov.metrics!.totalProducts}', textColor, sub, card, border, 300, isDark, onTap: () => context.go(RouteConstants.search))),
+              const SizedBox(width: 14),
+              Expanded(child: _metric(Icons.bolt_outlined, 'Active Sessions', '${prov.metrics!.activeSessions}', AppTheme.accent, sub,
+                  isDark ? AppTheme.accent.withValues(alpha: 0.08) : AppTheme.accent.withValues(alpha: 0.12),
+                  AppTheme.accent.withValues(alpha: 0.2), 350, isDark)),
+            ]),
+          ],
+          const SizedBox(height: 30),
+          _sectionHead('Recent Activity', 'View All ›', textColor, sub, () => context.go(RouteConstants.employees)).animate().fadeIn(delay: 400.ms),
+          const SizedBox(height: 14),
+          
+          if (prov.metrics != null && prov.metrics!.recentActivity.isEmpty)
+            _emptyActivity(sub, card, border)
+          else if (prov.metrics != null)
+            ...prov.metrics!.recentActivity.asMap().entries.map((entry) {
+              final item = entry.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _activity(
+                  _iconForType(item.type),
+                  item.title,
+                  item.subtitle.isNotEmpty ? item.subtitle : _relativeTime(item.timestamp),
+                  card, border, textColor, sub, 450 + entry.key * 50, isDark,
+                  timeLabel: _relativeTime(item.timestamp),
+                ),
+              );
+            }),
+          const SizedBox(height: 20),
+        ]),
       ),
     );
   }
@@ -192,7 +242,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight], begin: Alignment.topLeft, end: Alignment.bottomRight),
-            boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))],
+            boxShadow: [BoxShadow(color: AppTheme.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -212,9 +262,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.15),
+              color: AppTheme.primary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+              border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
             ),
             child: Text('ADMIN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.primaryGlow, letterSpacing: 1.5)),
           ),
@@ -230,13 +280,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: card,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: border),
-        boxShadow: isDark ? [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 15, offset: const Offset(0, 4))] : [],
+        boxShadow: isDark ? [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 15, offset: const Offset(0, 4))] : [],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(
             width: 36, height: 36,
-            decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
             child: Icon(icon, color: AppTheme.primary, size: 18),
           ),
           if (badge != null) ...[const Spacer(), Container(
@@ -285,7 +335,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Container(
           width: 42, height: 42,
           decoration: BoxDecoration(
-            color: AppTheme.primary.withOpacity(0.12),
+            color: AppTheme.primary.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: AppTheme.primaryGlow, size: 19),
@@ -301,8 +351,3 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ]),
     ))).animate().fadeIn(delay: Duration(milliseconds: delay)).slideY(begin: 0.05);
 }
-
-
-
-
-

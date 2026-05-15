@@ -18,6 +18,10 @@ class UserProfile(models.Model):
     searches_today = models.IntegerField(default=0)
     hours_logged = models.DecimalField(max_digits=5, decimal_places=1, default=0.0)
     is_active = models.BooleanField(default=True) # Custom active status to allow login while restricted
+    
+    # OTP for password reset
+    reset_otp = models.CharField(max_length=6, blank=True, null=True)
+    reset_otp_expiry = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username} - Level {self.price_level}"

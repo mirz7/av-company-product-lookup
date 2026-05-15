@@ -21,6 +21,9 @@ import 'screens/employees/employees_screen.dart';
 import 'screens/approvals/approvals_screen.dart';
 import 'screens/search/search_screen.dart';
 import 'screens/profile/profile_screen.dart';
+import 'screens/login/registration_screen.dart';
+import 'screens/login/forgot_password_screen.dart';
+import 'screens/login/reset_password_screen.dart';
 import 'services/background_service.dart';
 
 void main() async {
@@ -66,6 +69,9 @@ final _router = GoRouter(
   routes: [
     GoRoute(path: RouteConstants.splash, builder: (_, __) => const SplashScreen()),
     GoRoute(path: RouteConstants.login,  builder: (_, __) => const LoginScreen()),
+    GoRoute(path: RouteConstants.register, builder: (_, __) => const AdminRegistrationScreen()),
+    GoRoute(path: RouteConstants.forgotPassword, builder: (_, __) => const ForgotPasswordScreen()),
+    GoRoute(path: RouteConstants.resetPassword, builder: (_, state) => ResetPasswordScreen(initialEmail: state.uri.queryParameters['email'])),
     ShellRoute(
       builder: (context, state, child) => AdminScaffold(child: child),
       routes: [

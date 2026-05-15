@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import ProductSearchView, RegisterUserView, UserProfileView, IncrementSearchView
+from .views import (
+    ProductSearchView, RegisterUserView, UserProfileView, IncrementSearchView,
+    AdminSetupCheckView, AdminSetupView, ForgotPasswordView, ResetPasswordView
+)
 from .admin_views import (
     AdminDashboardView, AdminEmployeeListView, AdminEmployeeDetailView,
     AdminApprovalsView, AdminApproveEmployeeView, AdminRejectEmployeeView,
@@ -17,6 +20,10 @@ urlpatterns = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/me/', AuthMeView.as_view(), name='auth_me'),
+    path('admin/setup/check/', AdminSetupCheckView.as_view(), name='admin_setup_check'),
+    path('admin/setup/register/', AdminSetupView.as_view(), name='admin_setup_register'),
+    path('auth/forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
+    path('auth/reset-password/', ResetPasswordView.as_view(), name='reset_password'),
 
     # User profile (staff app)
     path('profile/', UserProfileView.as_view(), name='profile'),
