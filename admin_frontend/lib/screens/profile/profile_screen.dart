@@ -41,43 +41,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _logout(BuildContext context, bool isDark) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showGeneralDialog<bool>(
       context: context,
       barrierDismissible: true,
+      barrierLabel: 'Dismiss',
       barrierColor: Colors.black.withOpacity(0.5),
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32),
-        child: ClipRRect(borderRadius: BorderRadius.circular(24), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24), child: Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E2E).withOpacity(0.97) : Colors.white.withOpacity(0.95),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBorder),
-          ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              width: 64, height: 64,
-              decoration: BoxDecoration(color: AppTheme.danger.withOpacity(0.1), shape: BoxShape.circle),
-              child: const Icon(Icons.logout_rounded, color: AppTheme.danger, size: 28),
+      transitionDuration: const Duration(milliseconds: 350),
+      pageBuilder: (ctx, anim1, anim2) => const SizedBox.shrink(),
+      transitionBuilder: (ctx, anim1, anim2, child) {
+        final curved = CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic);
+        return SlideTransition(
+          position: Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(curved),
+          child: FadeTransition(
+            opacity: curved,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.92, end: 1.0).animate(curved),
+              child: Dialog(
+                backgroundColor: Colors.transparent,
+                insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+                child: ClipRRect(borderRadius: BorderRadius.circular(24), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24), child: Container(
+                  padding: const EdgeInsets.all(28),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E1E2E).withOpacity(0.97) : Colors.white.withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBorder),
+                  ),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Container(
+                      width: 64, height: 64,
+                      decoration: BoxDecoration(color: AppTheme.danger.withOpacity(0.1), shape: BoxShape.circle),
+                      child: const Icon(Icons.logout_rounded, color: AppTheme.danger, size: 28),
+                    ),
+                    const SizedBox(height: 20),
+                    Text('Sign Out?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: isDark ? Colors.white : AppTheme.lightText)),
+                    const SizedBox(height: 8),
+                    Text('You will be returned to the login screen.', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : AppTheme.lightSubText, height: 1.5)),
+                    const SizedBox(height: 28),
+                    Row(children: [
+                      Expanded(child: GestureDetector(onTap: () => Navigator.pop(ctx, false), child: Container(height: 48,
+                        decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.06) : AppTheme.lightBg2, borderRadius: BorderRadius.circular(14), border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBorder)),
+                        child: Center(child: Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: isDark ? Colors.white70 : AppTheme.lightSubText)))))),
+                      const SizedBox(width: 12),
+                      Expanded(child: GestureDetector(onTap: () => Navigator.pop(ctx, true), child: Container(height: 48,
+                        decoration: BoxDecoration(color: AppTheme.danger, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: AppTheme.danger.withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4))]),
+                        child: const Center(child: Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.white)))))),
+                    ]),
+                  ]),
+                ))),
+              ),
             ),
-            const SizedBox(height: 20),
-            Text('Sign Out?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: isDark ? Colors.white : AppTheme.lightText)),
-            const SizedBox(height: 8),
-            Text('You will be returned to the login screen.', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : AppTheme.lightSubText, height: 1.5)),
-            const SizedBox(height: 28),
-            Row(children: [
-              Expanded(child: GestureDetector(onTap: () => Navigator.pop(ctx, false), child: Container(height: 48,
-                decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.06) : AppTheme.lightBg2, borderRadius: BorderRadius.circular(14), border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBorder)),
-                child: Center(child: Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: isDark ? Colors.white70 : AppTheme.lightSubText)))))),
-              const SizedBox(width: 12),
-              Expanded(child: GestureDetector(onTap: () => Navigator.pop(ctx, true), child: Container(height: 48,
-                decoration: BoxDecoration(color: AppTheme.danger, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: AppTheme.danger.withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4))]),
-                child: const Center(child: Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.white)))))),
-            ]),
-          ]),
-        ))),
-      ),
+          ),
+        );
+      },
     );
     if (confirmed != true) return;
     await context.read<AuthProvider>().logout();

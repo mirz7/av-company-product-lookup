@@ -7,7 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   // Use the PC's local IP address so the physical Android device can connect over Wi-Fi
-  static const String baseUrl = 'http://192.168.1.5:8000/api';
+  static const String baseUrl =
+      'http://192.168.1.5:8000/api';
   final storage = const FlutterSecureStorage();
 
   // ── In-memory product cache ──────────────────────────────────────────────
@@ -29,7 +30,8 @@ class ApiService {
         final data = jsonDecode(response.body);
         await storage.write(key: 'access_token', value: data['access']);
         await storage.write(key: 'refresh_token', value: data['refresh']);
-        await storage.write(key: 'login_time', value: DateTime.now().toIso8601String());
+        await storage.write(
+            key: 'login_time', value: DateTime.now().toIso8601String());
         return true;
       }
       return false;
@@ -48,16 +50,17 @@ class ApiService {
           'Content-Type': 'application/json',
         },
       ).timeout(const Duration(seconds: 10)); // Timeout for offline detection
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data is List) {
           _allProductsCache = List<Map<String, dynamic>>.from(data);
-          
+
           // Save to local storage for offline use
           try {
             final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('cached_products', jsonEncode(_allProductsCache));
+            await prefs.setString(
+                'cached_products', jsonEncode(_allProductsCache));
           } catch (_) {}
 
           return _allProductsCache;
@@ -102,12 +105,12 @@ class ApiService {
       }
 
       final q = query.toLowerCase();
-      
+
       // 1. Check for an exact product_code match first (e.g., from QR scan)
-      final exactMatch = _allProductsCache?.where((p) =>
-          p['product_code']?.toString().toLowerCase() == q
-      ).toList();
-      
+      final exactMatch = _allProductsCache
+          ?.where((p) => p['product_code']?.toString().toLowerCase() == q)
+          .toList();
+
       if (exactMatch != null && exactMatch.isNotEmpty) {
         return exactMatch;
       }
@@ -115,7 +118,8 @@ class ApiService {
       // 2. Fall back to partial match for names or partial codes
       final localResults = _allProductsCache
           ?.where((p) =>
-              (p['product_code']?.toString().toLowerCase().contains(q) ?? false) ||
+              (p['product_code']?.toString().toLowerCase().contains(q) ??
+                  false) ||
               (p['name']?.toString().toLowerCase().contains(q) ?? false))
           .toList();
 
@@ -133,16 +137,15 @@ class ApiService {
             'Content-Type': 'application/json',
           },
         ).timeout(const Duration(seconds: 10));
-        
+
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           if (data is List) {
             final results = List<Map<String, dynamic>>.from(data);
             // Merge results into cache to avoid future backend calls
             if (results.isNotEmpty && _allProductsCache != null) {
-              final existingCodes = _allProductsCache!
-                  .map((p) => p['product_code'])
-                  .toSet();
+              final existingCodes =
+                  _allProductsCache!.map((p) => p['product_code']).toSet();
               bool cacheUpdated = false;
               for (final r in results) {
                 if (!existingCodes.contains(r['product_code'])) {
@@ -153,7 +156,8 @@ class ApiService {
               if (cacheUpdated) {
                 try {
                   final prefs = await SharedPreferences.getInstance();
-                  await prefs.setString('cached_products', jsonEncode(_allProductsCache));
+                  await prefs.setString(
+                      'cached_products', jsonEncode(_allProductsCache));
                 } catch (_) {}
               }
             }
@@ -170,12 +174,13 @@ class ApiService {
     }
   }
 
-  Future<bool> register(String name, String username, String role, String password, String phone, String email) async {
+  Future<bool> register(String name, String username, String role,
+      String password, String phone, String email) async {
     try {
       final parts = name.split(' ');
       final firstName = parts.isNotEmpty ? parts.first : '';
       final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-      
+
       final response = await http.post(
         Uri.parse('$baseUrl/register/'),
         headers: {'Content-Type': 'application/json'},
@@ -216,10 +221,10 @@ class ApiService {
               'Content-Type': 'application/json',
             },
           ).timeout(const Duration(seconds: 10));
-          
+
           if (response.statusCode == 200) {
             _profileCache = jsonDecode(response.body);
-            
+
             // If the account is restricted (custom flag), don't mask it with cache
             if (_profileCache?['is_active'] == false) {
               // We keep it in cache but we'll handle redirection in the UI
@@ -227,7 +232,8 @@ class ApiService {
 
             try {
               final prefs = await SharedPreferences.getInstance();
-              await prefs.setString('cached_profile', jsonEncode(_profileCache));
+              await prefs.setString(
+                  'cached_profile', jsonEncode(_profileCache));
             } catch (_) {}
           } else if (response.statusCode == 401 || response.statusCode == 403) {
             // User was likely deleted or system-disabled
@@ -260,7 +266,8 @@ class ApiService {
             final loginTime = DateTime.parse(loginTimeStr);
             final diff = DateTime.now().difference(loginTime);
             // using inSeconds for exact granularity, 2 decimal places to capture minutes cleanly
-            _profileCache!['hours_logged'] = (diff.inSeconds / 3600.0).toStringAsFixed(2);
+            _profileCache!['hours_logged'] =
+                (diff.inSeconds / 3600.0).toStringAsFixed(2);
           } catch (e) {
             // fallback if parsing fails
           }
@@ -301,7 +308,8 @@ class ApiService {
       final token = await storage.read(key: 'access_token');
       if (token == null) return false;
 
-      final request = http.MultipartRequest('PATCH', Uri.parse('$baseUrl/profile/'));
+      final request =
+          http.MultipartRequest('PATCH', Uri.parse('$baseUrl/profile/'));
       request.headers['Authorization'] = 'Bearer $token';
 
       if (kIsWeb) {
@@ -314,7 +322,8 @@ class ApiService {
           filename: 'profile_photo.jpg',
         ));
       } else {
-        request.files.add(await http.MultipartFile.fromPath('profile_photo', imagePath));
+        request.files
+            .add(await http.MultipartFile.fromPath('profile_photo', imagePath));
       }
 
       final response = await request.send();
@@ -362,7 +371,7 @@ class ApiService {
         body: jsonEncode({'email': email}),
       );
       if (response.statusCode == 200) return;
-      
+
       final Map<String, dynamic> data = jsonDecode(response.body);
       throw Exception(data['error'] ?? 'Failed to process request');
     } catch (e) {
@@ -371,7 +380,8 @@ class ApiService {
     }
   }
 
-  Future<bool> resetPassword(String email, String otp, String newPassword) async {
+  Future<bool> resetPassword(
+      String email, String otp, String newPassword) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/reset-password/'),
       headers: {'Content-Type': 'application/json'},

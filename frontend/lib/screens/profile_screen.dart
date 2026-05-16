@@ -529,58 +529,62 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
                                       border: Border.all(color: borderColor),
                                     ),
                                     child: _maybeAnimate(
-                                      Row(
+                                      Column(
                                         children: [
-                                          GestureDetector(
-                                            onTap: _editProfilePhoto,
-                                            child: Stack(
-                                              children: [
-                                                Container(
-                                                  decoration: BoxDecoration(
-                                                    shape: BoxShape.circle,
-                                                    border: Border.all(color: AppTheme.crimson.withOpacity(0.5), width: 2),
-                                                    boxShadow: [BoxShadow(color: AppTheme.crimson.withOpacity(0.2), blurRadius: 15, spreadRadius: 2)],
-                                                  ),
-                                                  child: CircleAvatar(
-                                                    radius: 38,
-                                                    backgroundColor: cardColor,
-                                                    backgroundImage: (_profileData?['profile_photo'] != null)
-                                                        ? CachedNetworkImageProvider(_profileData!['profile_photo'])
-                                                        : null,
-                                                    child: (_profileData?['profile_photo'] == null)
-                                                        ? Icon(Icons.person, size: 40, color: subTextColor.withOpacity(0.3))
-                                                        : null,
-                                                  ),
+                                          Stack(clipBehavior: Clip.none, children: [
+                                            GestureDetector(
+                                              onTap: _editProfilePhoto,
+                                              child: Container(
+                                                width: 96, height: 96,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(color: AppTheme.crimson.withOpacity(0.5), width: 2),
+                                                  boxShadow: [BoxShadow(color: AppTheme.crimson.withOpacity(0.2), blurRadius: 15, spreadRadius: 2)],
                                                 ),
-                                                Positioned(
-                                                  bottom: 0,
-                                                  right: 0,
-                                                  child: Container(
-                                                    padding: const EdgeInsets.all(4),
-                                                    decoration: BoxDecoration(color: AppTheme.crimson, shape: BoxShape.circle, border: Border.all(color: isDark ? const Color(0xFF1A1A2E) : Colors.white, width: 2)),
-                                                    child: const Icon(Icons.camera_alt, size: 12, color: Colors.white),
-                                                  ),
+                                                child: CircleAvatar(
+                                                  radius: 46,
+                                                  backgroundColor: cardColor,
+                                                  backgroundImage: (_profileData?['profile_photo'] != null)
+                                                      ? CachedNetworkImageProvider(_profileData!['profile_photo'])
+                                                      : null,
+                                                  child: (_profileData?['profile_photo'] == null)
+                                                      ? Icon(Icons.person, size: 50, color: subTextColor.withOpacity(0.3))
+                                                      : null,
                                                 ),
-                                              ],
-                                            ),
-                                          ),
-                                          const SizedBox(width: 20),
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                _profileData?['full_name'] ?? 'User',
-                                                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textColor, letterSpacing: -0.5),
                                               ),
-                                              const SizedBox(height: 4),
-                                              Row(
-                                                children: [
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                    decoration: BoxDecoration(color: AppTheme.crimson.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                                                    child: Text('@${_profileData?['username'] ?? ''}', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: subTextColor, letterSpacing: 1)),
-                                                  ),
-                                                ],
+                                            ),
+                                            Positioned(
+                                              bottom: 0,
+                                              right: 0,
+                                              child: GestureDetector(
+                                                onTap: _editProfilePhoto,
+                                                child: Container(
+                                                  width: 28, height: 28,
+                                                  decoration: BoxDecoration(color: AppTheme.crimson, shape: BoxShape.circle, border: Border.all(color: isDark ? AppTheme.darkSurface : Colors.white, width: 2)),
+                                                  child: const Icon(Icons.edit, color: Colors.white, size: 14),
+                                                ),
+                                              ),
+                                            ),
+                                          ]),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            _profileData?['full_name']?.isNotEmpty == true ? _profileData!['full_name'] : (_profileData?['username'] ?? 'User'),
+                                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                                decoration: BoxDecoration(color: AppTheme.crimson.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.crimson.withOpacity(0.3))),
+                                                child: Text((_profileData?['role']?.toString().toUpperCase() ?? 'STAFF'), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.crimsonGlow, letterSpacing: 1)),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                                decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.06) : AppTheme.lightBg3, borderRadius: BorderRadius.circular(20), border: Border.all(color: borderColor)),
+                                                child: Text('@${_profileData?['username'] ?? ''}', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: subTextColor, letterSpacing: 1)),
                                               ),
                                             ],
                                           ),
