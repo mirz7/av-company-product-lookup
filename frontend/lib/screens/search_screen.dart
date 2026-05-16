@@ -27,7 +27,6 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
   int _totalProductsInDb = 0;
   // Price access flags — refreshed from server on each profile load
   bool _canSeeExtendedPrices = false; // Price B + C
-  final Set<String> _expandedCodes = {}; // Track expanded cards by product code
 
   @override
   void initState() {
@@ -60,7 +59,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     });
   }
 
-  Future<void> _searchProduct() async {
+  Future<void> _searchProduct({bool fromBarcode = false}) async {
     final query = _searchController.text.trim();
     if (query.isEmpty) {
       _loadInitialProducts();
@@ -72,11 +71,16 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     
     setState(() { _isSearching = true; _errorMessage = null; _products = null; });
     final data = await _apiService.searchProducts(query);
-    if (mounted) setState(() {
-      _isSearching = false;
-      if (data != null && data.isNotEmpty) { _products = data; }
-      else { _errorMessage = 'No products matched "$query".'; }
-    });
+    if (mounted) {
+      setState(() {
+        _isSearching = false;
+        if (data != null && data.isNotEmpty) { _products = data; }
+        else { _errorMessage = 'No products matched "$query".'; }
+      });
+      if (fromBarcode && data != null && data.length == 1) {
+        _showProductDetails(data.first);
+      }
+    }
   }
 
   Future<void> _scanBarcode() async {}
@@ -97,7 +101,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     if (rawValue != null && rawValue.isNotEmpty) {
       _deactivateCameraMode();
       _searchController.text = rawValue;
-      _searchProduct();
+      _searchProduct(fromBarcode: true);
     }
   }
 
@@ -170,23 +174,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                           itemCount: _products!.length,
                           separatorBuilder: (context, index) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
-                            final product = _products![index];
-                            final code = product['product_code'] ?? '';
-                            return _buildProductCard(
-                              product, 
-                              isSearchResult: _searchController.text.isNotEmpty, 
-                              delay: index * 50,
-                              isExpanded: _expandedCodes.contains(code),
-                              onToggle: () {
-                                setState(() {
-                                  if (_expandedCodes.contains(code)) {
-                                    _expandedCodes.remove(code);
-                                  } else {
-                                    _expandedCodes.add(code);
-                                  }
-                                });
-                              },
-                            );
+                            return _buildProductCard(_products![index], isSearchResult: _searchController.text.isNotEmpty, delay: index * 50);
                           },
                         ),
                       ],
@@ -543,139 +531,278 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     );
   }
 
-  Widget _buildProductCard(Map<String, dynamic> data, {bool isSearchResult = false, int delay = 0, bool isExpanded = false, VoidCallback? onToggle}) {
+  Widget _buildProductCard(Map<String, dynamic> data, {bool isSearchResult = false, int delay = 0}) {
     final isDark = context.read<ThemeProvider>().isDark;
     final textColor = isDark ? Colors.white : AppTheme.lightText;
     final subTextColor = isDark ? Colors.white54 : AppTheme.lightSubText;
     final name = data['name']?.isNotEmpty == true ? data['name'] : data['product_code'] ?? 'Product';
     final code = data['product_code'] ?? '';
-    
-    // Always show Price A (price_1) as the basic price
+    final price = data['price']?.toString() ?? '—';
     final priceA = data['price_1']?.toString() ?? '—';
     final priceB = data['price_2']?.toString() ?? '—';
     final priceC = data['price_3']?.toString() ?? '—';
 
     return GestureDetector(
-      onTap: onToggle,
+      onTap: () => _showProductDetails(data),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(isSearchResult ? 0.1 : 0.07) : Colors.white.withOpacity(isSearchResult ? 0.92 : 0.8),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: isDark ? Colors.white.withOpacity(isSearchResult ? 0.18 : 0.1) : AppTheme.lightBorder),
-              boxShadow: isSearchResult ? [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 8))] : null,
-            ),
-            child: Column(children: [
-              // Top accent bar
-              Container(
-                height: 4,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFFF6B6B)]),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-                ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(isSearchResult ? 0.1 : 0.07) : Colors.white.withOpacity(isSearchResult ? 0.92 : 0.8),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(isSearchResult ? 0.18 : 0.1) : AppTheme.lightBorder),
+            boxShadow: isSearchResult ? [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 8))] : null,
+          ),
+          child: Column(children: [
+            // Top accent bar
+            Container(
+              height: 4,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(colors: [Color(0xFF9E2016), Color(0xFFFF6B6B)]),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 18, right: 18, top: 14, bottom: 10),
+              child: Row(
+                children: [
+                  // Icon
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF9E2016).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF9E2016).withOpacity(0.3)),
+                    ),
+                    child: const Icon(Icons.inventory_2_outlined, color: Color(0xFFFF6B6B), size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  // Name + code
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          code,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white.withOpacity(0.6) : Colors.black.withOpacity(0.4),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                  // Price
+                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Text('₹$price', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: textColor)),
+                    Text('PRICE', style: TextStyle(fontSize: 9, color: subTextColor, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+                  ]),
+                ],
+              ),
+            ),
+            // Only show divider and extended prices if access is granted
+            if (_canSeeExtendedPrices) ...[
+              // Divider
+              Container(height: 1, color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.lightBorder),
+              // Extended Prices Row (B and C)
+              // Extended Prices Row (B and C)
               Padding(
-                padding: const EdgeInsets.only(left: 18, right: 18, top: 14, bottom: 10),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Row(
                   children: [
-                    // Icon
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF9E2016).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF9E2016).withOpacity(0.3)),
-                      ),
-                      child: const Icon(Icons.inventory_2_outlined, color: Color(0xFFFF6B6B), size: 22),
+                    Expanded(child: _buildPriceItem('Price B', priceB, center: true)),
+                    Container(width: 1, height: 24, color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
+                    Expanded(child: _buildPriceItem('Price C', priceC, center: true)),
+                  ],
+                ),
+              ),
+            ],
+          ]),
+        ),
+      ),
+    ),
+  ).animate().fade(delay: Duration(milliseconds: delay > 500 ? 500 : delay), duration: 350.ms).slideY(begin: 0.06, delay: Duration(milliseconds: delay > 500 ? 500 : delay));
+}
+
+  void _showProductDetails(Map<String, dynamic> data) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Dismiss',
+      barrierColor: Colors.black.withOpacity(0.6),
+      transitionDuration: const Duration(milliseconds: 350),
+      pageBuilder: (context, animation, secondaryAnimation) => const SizedBox(),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final isDark = Provider.of<ThemeProvider>(context, listen: false).isDark;
+        final name = data['name']?.isNotEmpty == true ? data['name'] : data['product_code'] ?? 'Product';
+        final code = data['product_code'] ?? '';
+        final price = data['price']?.toString() ?? '—';
+        final priceB = data['price_2']?.toString() ?? '—';
+        final priceC = data['price_3']?.toString() ?? '—';
+
+        return Stack(
+          children: [
+            // Blurred background overlay
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: FadeTransition(
+                opacity: animation,
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(color: Colors.transparent),
+                ),
+              ),
+            ),
+            // Bottom sheet
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                )),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.only(left: 24, right: 24, top: 12, bottom: 40),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 24,
+                          offset: const Offset(0, -5),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 14),
-                    // Name + code
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 4),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 48,
+                            height: 5,
+                            margin: const EdgeInsets.only(bottom: 24),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white24 : Colors.black12,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          name,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : AppTheme.lightText,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(6),
+                            color: isDark ? Colors.white12 : Colors.black.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             code,
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white.withOpacity(0.6) : Colors.black.withOpacity(0.4),
+                              color: isDark ? Colors.white70 : AppTheme.lightSubText,
                               letterSpacing: 0.5,
                             ),
                           ),
                         ),
-                      ]),
-                    ),
-                    // Price A (Always Basic)
-                    Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      Text('₹$priceA', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: textColor)),
-                      Text('BASIC PRICE', style: TextStyle(fontSize: 9, color: subTextColor, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
-                    ]),
-                  ],
-                ),
-              ),
-              
-              // Animated Expanded Content
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                child: isExpanded 
-                  ? Column(children: [
-                      Container(height: 1, color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.lightBorder),
-                      if (_canSeeExtendedPrices) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Row(
-                            children: [
-                              Expanded(child: _buildPriceItem('Price B', priceB, center: true)),
-                              Container(width: 1, height: 24, color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
-                              Expanded(child: _buildPriceItem('Price C', priceC, center: true)),
-                            ],
-                          ),
+                        const SizedBox(height: 36),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('PRICE', style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : AppTheme.lightSubText, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                                const SizedBox(height: 4),
+                                Text('₹$price', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: const Color(0xFFFF6B6B))),
+                              ],
+                            ),
+                          ],
                         ),
-                      ] else ...[
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                        if (_canSeeExtendedPrices) ...[
+                          const SizedBox(height: 28),
+                          Container(height: 1, color: isDark ? Colors.white12 : AppTheme.lightBorder),
+                          const SizedBox(height: 28),
+                          Row(
                             children: [
-                              const Icon(Icons.lock_outline_rounded, size: 14, color: Color(0xFFFF6B6B)),
-                              const SizedBox(width: 8),
-                              Text(
-                                'EXTENDED PRICES RESTRICTED',
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFFFF6B6B).withOpacity(0.7), letterSpacing: 1.2),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('PRICE B', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : AppTheme.lightSubText, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                                    const SizedBox(height: 6),
+                                    Text('₹$priceB', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: isDark ? Colors.white : AppTheme.lightText)),
+                                  ],
+                                ),
+                              ),
+                              Container(width: 1, height: 44, color: isDark ? Colors.white12 : AppTheme.lightBorder),
+                              const SizedBox(width: 24),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('PRICE C', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : AppTheme.lightSubText, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                                    const SizedBox(height: 6),
+                                    Text('₹$priceC', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: isDark ? Colors.white : AppTheme.lightText)),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
+                        ],
+                        const SizedBox(height: 40),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.crimson,
+                              foregroundColor: Colors.white,
+                              elevation: 8,
+                              shadowColor: AppTheme.crimson.withOpacity(0.4),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                            child: const Text('Close', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                          ),
                         ),
                       ],
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Icon(Icons.keyboard_arrow_up_rounded, size: 16, color: subTextColor.withOpacity(0.3)),
-                      ),
-                    ])
-                  : Container(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: subTextColor.withOpacity(0.3)),
                     ),
+                  ),
+                ),
               ),
-            ]),
-          ),
-        ),
-      ),
-    ).animate().fade(delay: Duration(milliseconds: delay > 500 ? 500 : delay), duration: 350.ms).slideY(begin: 0.06, delay: Duration(milliseconds: delay > 500 ? 500 : delay));
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildPriceItem(String label, String value, {bool center = false}) {

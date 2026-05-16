@@ -21,6 +21,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> with 
   final _emailCtrl = TextEditingController();
   final _firstCtrl = TextEditingController();
   final _lastCtrl = TextEditingController();
+  final _confirmPassCtrl = TextEditingController();
   
   bool _passVisible = false;
   bool _isLoading = false;
@@ -40,6 +41,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> with 
     _emailCtrl.dispose();
     _firstCtrl.dispose();
     _lastCtrl.dispose();
+    _confirmPassCtrl.dispose();
     _pulse.dispose();
     super.dispose();
   }
@@ -135,6 +137,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> with 
                   ]),
                   const SizedBox(height: 16),
                   _field(_passCtrl, 'Password', 'Create a strong password', Icons.lock_outline_rounded, true, textColor, sub, card, border, validator: (v) => (v == null || v.length < 6) ? 'Min 6 characters' : null),
+                  const SizedBox(height: 16),
+                  _field(_confirmPassCtrl, 'Confirm Password', 'Re-enter your password', Icons.lock_outline_rounded, true, textColor, sub, card, border, validator: (v) => (v != _passCtrl.text) ? 'Passwords do not match' : null),
                   
                   const SizedBox(height: 40),
                   

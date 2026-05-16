@@ -10,12 +10,13 @@ class Employee {
   final bool priceCAccess;
   final String permissionLevel;
   final String? profilePhotoUrl;
+  final String? phoneNumber;
 
   Employee({required this.id, required this.username, required this.email,
       required this.fullName, required this.jobRole, required this.isActive,
       required this.isApproved, required this.priceBAccess,
       required this.priceCAccess, required this.permissionLevel,
-      this.profilePhotoUrl});
+      this.profilePhotoUrl, this.phoneNumber});
 
   factory Employee.fromJson(Map<String, dynamic> json) {
     final level = json['permission_level']?.toString() ?? 'standard';
@@ -32,6 +33,7 @@ class Employee {
       priceCAccess: level == 'wholesale' || (json['price_c_access'] ?? false),
       permissionLevel: level,
       profilePhotoUrl: json['profile_photo_url']?.toString(),
+      phoneNumber: json['phone_number']?.toString(),
     );
   }
 }

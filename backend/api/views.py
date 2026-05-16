@@ -19,6 +19,13 @@ class ProductSearchView(generics.ListAPIView):
         
         if search_term:
             from django.db.models import Q
+            
+            # First, check for an exact match on the product code (e.g. from QR scan)
+            exact_match = Product.objects.filter(product_code__iexact=search_term)
+            if exact_match.exists():
+                return exact_match
+                
+            # Fallback to partial matching for names or partial codes
             queryset = Product.objects.filter(
                 Q(product_code__icontains=search_term) | Q(name__icontains=search_term)
             )

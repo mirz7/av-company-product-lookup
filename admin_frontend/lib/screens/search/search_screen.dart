@@ -24,17 +24,27 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() { super.initState(); _load(''); }
 
-  Future<void> _load(String q) async {
+  Future<void> _load(String q, {bool fromBarcode = false}) async {
     setState(() { _loading = true; _error = null; });
     final d = await _svc.searchProductsRaw(q);
-    if (mounted) setState(() { _loading = false; _products = d; if (q.isEmpty) _total = d?.length ?? 0; else if (d == null || d.isEmpty) _error = 'No products matched "$q".'; });
+    if (mounted) {
+      setState(() { 
+        _loading = false; 
+        _products = d; 
+        if (q.isEmpty) _total = d?.length ?? 0; 
+        else if (d == null || d.isEmpty) _error = 'No products matched "$q".'; 
+      });
+      if (fromBarcode && d != null && d.length == 1) {
+        _showProductDetails(d.first);
+      }
+    }
   }
 
   void _activateCam() { setState(() => _cameraMode = true); _cam = MobileScannerController(); }
   void _deactivateCam() { _cam?.dispose(); _cam = null; setState(() => _cameraMode = false); }
   void _onDetect(BarcodeCapture c) {
     final v = c.barcodes.first.rawValue;
-    if (v != null && v.isNotEmpty) { _deactivateCam(); _ctrl.text = v; _load(v); }
+    if (v != null && v.isNotEmpty) { _deactivateCam(); _ctrl.text = v; _load(v, fromBarcode: true); }
   }
 
   @override
@@ -161,7 +171,9 @@ class _SearchScreenState extends State<SearchScreen> {
     final pB = d['price_2']?.toString() ?? '—';
     final pC = d['price_3']?.toString() ?? '—';
 
-    return ClipRRect(borderRadius: BorderRadius.circular(18), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: Container(
+    return GestureDetector(
+      onTap: () => _showProductDetails(d),
+      child: ClipRRect(borderRadius: BorderRadius.circular(18), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: Container(
       decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(18), border: Border.all(color: isResult ? AppTheme.primary.withOpacity(0.25) : border), boxShadow: isResult ? [BoxShadow(color: AppTheme.primary.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8))] : null),
       child: Column(children: [
         Container(height: 4, decoration: BoxDecoration(gradient: LinearGradient(colors: [AppTheme.primary, AppTheme.primaryGlow]), borderRadius: const BorderRadius.vertical(top: Radius.circular(18)))),
@@ -176,16 +188,124 @@ class _SearchScreenState extends State<SearchScreen> {
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('₹$price', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: textColor)), Text('PRICE A', style: TextStyle(fontSize: 9, color: sub, letterSpacing: 1.5, fontWeight: FontWeight.bold))]),
         ])),
         Container(height: 1, color: border),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          _pi('Price A', pA, textColor, sub), _pi('Price B', pB, textColor, sub), _pi('Price C', pC, textColor, sub),
+        Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Row(children: [
+          Expanded(child: _pi('Price B', pB, textColor, sub, align: CrossAxisAlignment.center)),
+          Container(width: 1, height: 24, color: border),
+          Expanded(child: _pi('Price C', pC, textColor, sub, align: CrossAxisAlignment.center)),
         ])),
       ]),
-    ))).animate().fade(delay: Duration(milliseconds: delay > 500 ? 500 : delay), duration: 350.ms).slideY(begin: 0.06, delay: Duration(milliseconds: delay > 500 ? 500 : delay));
+    )))).animate().fade(delay: Duration(milliseconds: delay > 500 ? 500 : delay), duration: 350.ms).slideY(begin: 0.06, delay: Duration(milliseconds: delay > 500 ? 500 : delay));
   }
 
-  Widget _pi(String label, String val, Color textColor, Color sub) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  void _showProductDetails(Map<String, dynamic> data) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Dismiss',
+      barrierColor: Colors.black.withOpacity(0.6),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (context, animation, secondaryAnimation) => const SizedBox(),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final isDark = Provider.of<ThemeProvider>(context, listen: false).isDark;
+        final name = data['name']?.isNotEmpty == true ? data['name'] : data['product_code'] ?? 'Product';
+        final code = data['product_code'] ?? '';
+        final price = data['price']?.toString() ?? '—';
+        final priceB = data['price_2']?.toString() ?? '—';
+        final priceC = data['price_3']?.toString() ?? '—';
+        
+        final sheetBg = isDark ? AppTheme.darkSurface : AppTheme.lightSurface;
+        final textColor = isDark ? Colors.white : AppTheme.lightText;
+        final subTextColor = isDark ? Colors.white54 : AppTheme.lightSubText;
+
+        return Stack(
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: FadeTransition(
+                opacity: animation,
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(color: Colors.transparent),
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.only(left: 24, right: 24, top: 12, bottom: 40),
+                    decoration: BoxDecoration(
+                      color: sheetBg,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 24, offset: const Offset(0, -5))],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(child: Container(width: 48, height: 5, margin: const EdgeInsets.only(bottom: 24), decoration: BoxDecoration(color: isDark ? Colors.white24 : Colors.black12, borderRadius: BorderRadius.circular(10)))),
+                        Text(name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor)),
+                        const SizedBox(height: 8),
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: isDark ? Colors.white12 : Colors.black.withOpacity(0.05), borderRadius: BorderRadius.circular(8)), child: Text(code, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: subTextColor, letterSpacing: 0.5))),
+                        const SizedBox(height: 36),
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text('PRICE', style: TextStyle(fontSize: 12, color: subTextColor, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                            const SizedBox(height: 4),
+                            Text('₹$price', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: AppTheme.primaryGlow)),
+                          ]),
+                        ]),
+                        const SizedBox(height: 28),
+                        Container(height: 1, color: isDark ? Colors.white12 : AppTheme.lightBorder),
+                        const SizedBox(height: 28),
+                        Row(children: [
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text('PRICE B', style: TextStyle(fontSize: 11, color: subTextColor, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                            const SizedBox(height: 6),
+                            Text('₹$priceB', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: textColor)),
+                          ])),
+                          Container(width: 1, height: 44, color: isDark ? Colors.white12 : AppTheme.lightBorder),
+                          const SizedBox(width: 24),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text('PRICE C', style: TextStyle(fontSize: 11, color: subTextColor, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                            const SizedBox(height: 6),
+                            Text('₹$priceC', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: textColor)),
+                          ])),
+                        ]),
+                        const SizedBox(height: 40),
+                        SizedBox(width: double.infinity, height: 56, child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 8,
+                            shadowColor: AppTheme.primary.withOpacity(0.4),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: const Text('Close', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                        )),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _pi(String label, String val, Color textColor, Color sub, {CrossAxisAlignment align = CrossAxisAlignment.start}) => Column(crossAxisAlignment: align, children: [
     Text(label.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: sub, letterSpacing: 1.0)),
     const SizedBox(height: 2),
-    Text('₹$val', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textColor)),
+    Text('₹$val', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textColor)),
   ]);
 }

@@ -266,9 +266,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               ],
                             ),
                           ),
-                          Text(
-                            'Forgot password?',
-                            style: TextStyle(fontSize: 13, color: subTextColor, decoration: TextDecoration.underline, decorationColor: subTextColor.withOpacity(0.3)),
+                          GestureDetector(
+                            onTap: () => Navigator.pushNamed(context, '/forgot-password'),
+                            child: Text(
+                              'Forgot password?',
+                              style: TextStyle(fontSize: 13, color: subTextColor, decoration: TextDecoration.underline, decorationColor: subTextColor.withOpacity(0.3)),
+                            ),
                           ),
                         ],
                       ).animate().fadeIn(delay: 550.ms),

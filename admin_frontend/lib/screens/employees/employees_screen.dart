@@ -107,19 +107,39 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
           ),
 
           // Search
-          Padding(padding: const EdgeInsets.fromLTRB(20, 4, 20, 12), child: ClipRRect(borderRadius: BorderRadius.circular(14), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), child: TextField(
-            controller: _searchCtrl, style: TextStyle(color: textColor, fontSize: 14),
-            decoration: InputDecoration(
-              hintText: 'Search employees...', hintStyle: TextStyle(color: sub.withOpacity(0.5), fontSize: 14),
-              prefixIcon: const Icon(Icons.search, color: AppTheme.primary, size: 20),
-              filled: true, fillColor: card,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primary, width: 1.5)),
-              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(color: isDark ? Colors.black26 : AppTheme.primary.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8)),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    style: TextStyle(color: textColor, fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Search employees...',
+                      hintStyle: TextStyle(color: sub.withOpacity(0.5), fontSize: 14),
+                      prefixIcon: const Icon(Icons.search, color: AppTheme.primary, size: 20),
+                      filled: true,
+                      fillColor: card,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: border)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: border)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppTheme.primary, width: 1.5)),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onChanged: (v) { prov.searchQuery = v; prov.fetchEmployees(); },
+                  ),
+                ),
+              ),
             ),
-            onChanged: (v) { prov.searchQuery = v; prov.fetchEmployees(); },
-          )))).animate().fadeIn(delay: 120.ms),
+          ).animate().fadeIn(delay: 120.ms),
 
           Expanded(child: prov.isLoading
             ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
@@ -152,14 +172,40 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
     ]),
   );
 
-  void _showSheet(Employee emp) => showModalBottomSheet(
-    context: context, 
-    isScrollControlled: true, 
-    backgroundColor: Colors.transparent, 
-    builder: (_) => Stack(children: [
-      GestureDetector(onTap: () => Navigator.pop(context), child: Container(color: Colors.transparent)),
-      _PermissionSheet(employee: emp),
-    ]),
+  void _showSheet(Employee emp) => showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Dismiss',
+    barrierColor: Colors.black.withOpacity(0.6),
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (context, animation, secondaryAnimation) => const SizedBox(),
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      return Stack(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: FadeTransition(
+              opacity: animation,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(color: Colors.transparent),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SlideTransition(
+              position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+                .animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: Material(
+                color: Colors.transparent,
+                child: _PermissionSheet(employee: emp),
+              ),
+            ),
+          ),
+        ],
+      );
+    },
   );
 
 
@@ -169,9 +215,9 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
     final String initialText = initials.isEmpty ? emp.username.substring(0, emp.username.length > 2 ? 2 : emp.username.length).toUpperCase() : initials;
     final avatarColors = [AppTheme.primary, const Color(0xFF2980B9), const Color(0xFF27AE60), const Color(0xFF8E44AD), AppTheme.accent];
     final ac = avatarColors[emp.id % avatarColors.length];
-    final sc = emp.isApproved ? AppTheme.accent : AppTheme.warning;
+    final sc = emp.isActive ? AppTheme.accent : AppTheme.danger;
 
-    return Padding(padding: const EdgeInsets.only(bottom: 10), child: ClipRRect(borderRadius: BorderRadius.circular(18), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), child: GestureDetector(
+    return Padding(padding: const EdgeInsets.only(bottom: 16), child: ClipRRect(borderRadius: BorderRadius.circular(18), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), child: GestureDetector(
       onTap: () => _showSheet(emp),
       child: Container(
         decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(18), border: Border.all(color: border)),
@@ -220,7 +266,7 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Container(width: 6, height: 6, decoration: BoxDecoration(color: sc, shape: BoxShape.circle)),
                 const SizedBox(width: 5),
-                Text(emp.isApproved ? 'Approved' : 'Pending', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: sc)),
+                Text(emp.isActive ? 'Active' : 'Inactive', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: sc)),
               ]),
             ),
           ])),
@@ -379,95 +425,109 @@ class _PermissionSheetState extends State<_PermissionSheet> {
     final initials = widget.employee.fullName.split(' ').take(2).map((e) => e.isNotEmpty ? e[0] : '').join().toUpperCase();
     final String initialText = initials.isEmpty ? widget.employee.username.substring(0, widget.employee.username.length > 2 ? 2 : widget.employee.username.length).toUpperCase() : initials;
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.53, 
-      minChildSize: 0.4, 
-      maxChildSize: 0.95, 
-      builder: (_, ctrl) => ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), 
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20), 
-          child: Container(
-            decoration: BoxDecoration(
-              color: bg.withOpacity(isDark ? 0.97 : 0.98), 
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), 
-              border: Border(top: BorderSide(color: AppTheme.primary.withOpacity(0.3), width: 2))
-            ),
-            child: ListView(
-              controller: ctrl, 
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8), 
-              children: [
-                Center(child: Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(color: Colors.grey[500], borderRadius: BorderRadius.circular(2)))),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(left: 24, right: 24, top: 12, bottom: 40),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        border: Border(top: BorderSide(color: AppTheme.primary.withOpacity(0.3), width: 2)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 24, offset: const Offset(0, -5))],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(child: Container(width: 48, height: 5, margin: const EdgeInsets.only(bottom: 24), decoration: BoxDecoration(color: isDark ? Colors.white24 : Colors.black12, borderRadius: BorderRadius.circular(10)))),
 
-                // ── Header ──
-                Text('Employee Overview', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: sub, letterSpacing: 1.5)),
-                const SizedBox(height: 10),
+          // ── Header ──
+          Text('Employee Overview', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: sub, letterSpacing: 1.5)),
+          const SizedBox(height: 10),
 
-                // ── Employee info ──
-                Row(children: [
-                  GestureDetector(
-                    onTap: widget.employee.profilePhotoUrl != null ? () => _viewPhoto(context, widget.employee.profilePhotoUrl!, widget.employee.fullName, widget.employee.id) : null,
-                    child: Hero(
-                      tag: 'emp_avatar_${widget.employee.id}',
-                      child: Container(
-                        width: 64, height: 64,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppTheme.primary.withOpacity(0.2), width: 2),
-                          boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.25), blurRadius: 15, offset: const Offset(0, 5))],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: widget.employee.profilePhotoUrl != null && widget.employee.profilePhotoUrl!.isNotEmpty
-                            ? Image.network(widget.employee.profilePhotoUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Center(child: Text(initialText, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24))))
-                            : Center(child: Text(initialText.isEmpty ? '??' : initialText, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24))),
-                        ),
-                      ),
-                    ),
+          // ── Employee info ──
+          Row(children: [
+            GestureDetector(
+              onTap: widget.employee.profilePhotoUrl != null ? () => _viewPhoto(context, widget.employee.profilePhotoUrl!, widget.employee.fullName, widget.employee.id) : null,
+              child: Hero(
+                tag: 'emp_avatar_${widget.employee.id}',
+                child: Container(
+                  width: 64, height: 64,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.primary.withOpacity(0.2), width: 2),
+                    boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.25), blurRadius: 15, offset: const Offset(0, 5))],
                   ),
-                  const SizedBox(width: 18),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(widget.employee.fullName, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 0.2)),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBg3, borderRadius: BorderRadius.circular(6)),
-                      child: Text('${widget.employee.jobRole} • #AV-${widget.employee.id.toString().padLeft(4, '0')}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: sub, letterSpacing: 0.5)),
-                    ),
-                  ])),
-                ]),
-                const SizedBox(height: 18),
-
-                // ── Access Control Section ──
-                Row(children: [
-                  Container(width: 3, height: 14, decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(2))),
-                  const SizedBox(width: 8),
-                  Text('Access Control', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: textColor, letterSpacing: 0.5)),
-                ]),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: widget.employee.profilePhotoUrl != null && widget.employee.profilePhotoUrl!.isNotEmpty
+                      ? Image.network(widget.employee.profilePhotoUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Center(child: Text(initialText, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24))))
+                      : Center(child: Text(initialText.isEmpty ? '??' : initialText, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24))),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 18),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(widget.employee.fullName, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 0.2)),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBg3, borderRadius: BorderRadius.circular(6)),
+                child: Text('${widget.employee.jobRole} • #AV-${widget.employee.id.toString().padLeft(4, '0')}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: sub, letterSpacing: 0.5)),
+              ),
+              if (widget.employee.phoneNumber != null && widget.employee.phoneNumber!.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                _toggle(Icons.local_offer_outlined, 'Price A', 'Retail Listing Price', true, null, textColor, sub, isDark),
-                Divider(height: 24, color: border),
-                _toggle(Icons.diamond_outlined, 'Extended Pricing (Price B + C)', 'Unlock wholesale, cost tiers & cost price visibility', _priceBC, (v) => _autoSave('priceBC', v), textColor, sub, isDark),
-                Divider(height: 24, color: border),
-                _toggle(Icons.power_settings_new, 'Account Active', 'Allow employee to login', _active, (v) => _autoSave('active', v), textColor, sub, isDark),
-
-                const SizedBox(height: 24),
-
-                // ── Delete Button ──
-                SizedBox(width: double.infinity, height: 50, child: OutlinedButton(
-                  onPressed: _delete,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.danger,
-                    side: BorderSide(color: AppTheme.danger.withOpacity(0.5), width: 1.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  child: const Text('Delete Employee Account', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                )).animate(onPlay: (ctrl) => ctrl.repeat(reverse: true)).shimmer(duration: 2000.ms, color: Colors.white12),
+                Row(children: [
+                  Icon(Icons.phone_outlined, size: 14, color: AppTheme.primary),
+                  const SizedBox(width: 6),
+                  Text(widget.employee.phoneNumber!, style: TextStyle(fontSize: 12, color: sub, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+                ]),
               ],
-            ),
+            ])),
+          ]),
+          const SizedBox(height: 18),
+
+          // ── Access Control Section ──
+          Row(children: [
+            Container(width: 3, height: 14, decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 8),
+            Text('Access Control', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: textColor, letterSpacing: 0.5)),
+          ]),
+          const SizedBox(height: 8),
+          _toggle(Icons.local_offer_outlined, 'Price A', 'Retail Listing Price', true, null, textColor, sub, isDark),
+          Divider(height: 24, color: border),
+          _toggle(Icons.diamond_outlined, 'Extended Pricing (Price B + C)', 'Unlock wholesale, cost tiers & cost price visibility', _priceBC, (v) => _autoSave('priceBC', v), textColor, sub, isDark),
+          Divider(height: 24, color: border),
+          _toggle(Icons.power_settings_new, 'Account Active', 'Allow employee to login', _active, (v) => _autoSave('active', v), textColor, sub, isDark),
+
+          const SizedBox(height: 24),
+
+          // ── Delete Button & Close Button ──
+          Column(
+            children: [
+              SizedBox(width: double.infinity, height: 50, child: OutlinedButton(
+                onPressed: _delete,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.danger,
+                  side: BorderSide(color: AppTheme.danger.withOpacity(0.5), width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Delete Employee Account', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+              )).animate(onPlay: (ctrl) => ctrl.repeat(reverse: true)).shimmer(duration: 2000.ms, color: Colors.white12),
+              const SizedBox(height: 12),
+              SizedBox(width: double.infinity, height: 50, child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+              )),
+            ],
           ),
-        ),
+        ],
       ),
     );
   }

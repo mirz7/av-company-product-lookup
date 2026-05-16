@@ -9,6 +9,8 @@ import 'screens/profile_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/pending_approval_screen.dart';
 import 'screens/restricted_screen.dart';
+import 'screens/forgot_password_screen.dart';
+import 'screens/reset_password_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void main() {
@@ -80,6 +82,8 @@ class StaffApp extends StatelessWidget {
         '/restricted': (context) => const RestrictedScreen(),
         '/search': (context) => const SearchScreen(),
         '/profile': (context) => const ProfileScreen(),
+        '/forgot-password': (context) => const ForgotPasswordScreen(),
+        '/reset-password': (context) => const ResetPasswordScreen(),
       },
     );
   }

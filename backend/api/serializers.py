@@ -97,12 +97,13 @@ class AdminEmployeeSerializer(serializers.ModelSerializer):
     is_approved = serializers.SerializerMethodField()
     is_active = serializers.SerializerMethodField()
     profile_photo_url = serializers.SerializerMethodField()
+    phone_number = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name',
                   'is_active', 'is_approved', 'job_role', 'permission_level',
-                  'price_b_access', 'price_c_access', 'profile_photo_url', 'date_joined']
+                  'price_b_access', 'price_c_access', 'profile_photo_url', 'phone_number', 'date_joined']
 
     def get_job_role(self, obj):
         try:
@@ -149,6 +150,12 @@ class AdminEmployeeSerializer(serializers.ModelSerializer):
         except Exception:
             pass
         return None
+
+    def get_phone_number(self, obj):
+        try:
+            return obj.profile.phone_number
+        except Exception:
+            return None
 from .models import FCMToken
 
 class FCMTokenSerializer(serializers.ModelSerializer):

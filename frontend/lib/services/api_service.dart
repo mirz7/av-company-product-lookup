@@ -102,6 +102,17 @@ class ApiService {
       }
 
       final q = query.toLowerCase();
+      
+      // 1. Check for an exact product_code match first (e.g., from QR scan)
+      final exactMatch = _allProductsCache?.where((p) =>
+          p['product_code']?.toString().toLowerCase() == q
+      ).toList();
+      
+      if (exactMatch != null && exactMatch.isNotEmpty) {
+        return exactMatch;
+      }
+
+      // 2. Fall back to partial match for names or partial codes
       final localResults = _allProductsCache
           ?.where((p) =>
               (p['product_code']?.toString().toLowerCase().contains(q) ?? false) ||
@@ -341,5 +352,35 @@ class ApiService {
       await prefs.remove('cached_products');
       await prefs.remove('cached_profile');
     } catch (_) {}
+  }
+
+  Future<void> forgotPassword(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/forgot-password/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      if (response.statusCode == 200) return;
+      
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to process request');
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Server unreachable. Please try again later.');
+    }
+  }
+
+  Future<bool> resetPassword(String email, String otp, String newPassword) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/reset-password/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'otp': otp,
+        'password': newPassword,
+      }),
+    );
+    return response.statusCode == 200;
   }
 }
