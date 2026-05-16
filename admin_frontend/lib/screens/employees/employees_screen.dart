@@ -91,7 +91,7 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
               ),
               child: Text('STAFF', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.primaryGlow, letterSpacing: 1.5)),
             ),
-          ])).animate().fadeIn(delay: 50.ms).slideY(begin: 0.05),
+          ])),
 
           // Title + Stats row
           Padding(
@@ -102,7 +102,7 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
                 _statBadge('Active Staff', '$activeCount', AppTheme.accent, isDark),
                 const SizedBox(width: 8),
                 _statBadge('Compliance', '$complianceRate%', AppTheme.primary, isDark),
-              ]).animate().fadeIn(delay: 100.ms),
+              ]),
             ]),
           ),
 
@@ -139,7 +139,7 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
                 ),
               ),
             ),
-          ).animate().fadeIn(delay: 120.ms),
+          ),
 
           Expanded(child: prov.isLoading
             ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
@@ -217,78 +217,83 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
     final ac = avatarColors[emp.id % avatarColors.length];
     final sc = emp.isActive ? AppTheme.accent : AppTheme.danger;
 
-    return Padding(padding: const EdgeInsets.only(bottom: 16), child: ClipRRect(borderRadius: BorderRadius.circular(18), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), child: GestureDetector(
-      onTap: () => _showSheet(emp),
-      child: Container(
-        decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(18), border: Border.all(color: border)),
-        child: Column(children: [
-          Padding(padding: const EdgeInsets.all(16), child: Row(children: [
-            // Avatar — Clickable Hero Animation (keeps its own tap for photo)
-            GestureDetector(
-            onTap: emp.profilePhotoUrl != null ? () => _viewPhoto(ctx, emp.profilePhotoUrl!, emp.fullName, emp.id) : null,
-              child: Hero(
-                tag: 'emp_avatar_${emp.id}',
-                child: Container(
-                  width: 50, height: 50,
-                  decoration: BoxDecoration(
-                    gradient: emp.profilePhotoUrl == null
-                        ? LinearGradient(colors: [ac, ac.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-                        : null,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [BoxShadow(color: ac.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))],
-                  ),
-                  child: emp.profilePhotoUrl != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: Image.network(
-                            emp.profilePhotoUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Center(
-                              child: Text(initialText.isEmpty ? '??' : initialText,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showSheet(emp),
+        borderRadius: BorderRadius.circular(18),
+        splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.12),
+        child: ClipRRect(borderRadius: BorderRadius.circular(18), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), child: Container(
+          decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(18), border: Border.all(color: border)),
+          child: Column(children: [
+            Padding(padding: const EdgeInsets.all(16), child: Row(children: [
+              // Avatar — Clickable Hero Animation (keeps its own tap for photo)
+              GestureDetector(
+              onTap: emp.profilePhotoUrl != null ? () => _viewPhoto(ctx, emp.profilePhotoUrl!, emp.fullName, emp.id) : null,
+                child: Hero(
+                  tag: 'emp_avatar_${emp.id}',
+                  child: Container(
+                    width: 50, height: 50,
+                    decoration: BoxDecoration(
+                      gradient: emp.profilePhotoUrl == null
+                          ? LinearGradient(colors: [ac, ac.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+                          : null,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [BoxShadow(color: ac.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))],
+                    ),
+                    child: emp.profilePhotoUrl != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.network(
+                              emp.profilePhotoUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Center(
+                                child: Text(initialText.isEmpty ? '??' : initialText,
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+                              ),
                             ),
-                          ),
-                        )
-                      : Center(child: Text(initialText.isEmpty ? '??' : initialText,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16))),
+                          )
+                        : Center(child: Text(initialText.isEmpty ? '??' : initialText,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16))),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(emp.fullName, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textColor)),
-              const SizedBox(height: 2),
-              Text(emp.jobRole, style: TextStyle(fontSize: 12, color: sub)),
+              const SizedBox(width: 14),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(emp.fullName, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textColor)),
+                const SizedBox(height: 2),
+                Text(emp.jobRole, style: TextStyle(fontSize: 12, color: sub)),
+              ])),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(color: sc.withOpacity(0.12), borderRadius: BorderRadius.circular(10), border: Border.all(color: sc.withOpacity(0.25))),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Container(width: 6, height: 6, decoration: BoxDecoration(color: sc, shape: BoxShape.circle)),
+                  const SizedBox(width: 5),
+                  Text(emp.isActive ? 'Active' : 'Inactive', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: sc)),
+                ]),
+              ),
             ])),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(color: sc.withOpacity(0.12), borderRadius: BorderRadius.circular(10), border: Border.all(color: sc.withOpacity(0.25))),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Container(width: 6, height: 6, decoration: BoxDecoration(color: sc, shape: BoxShape.circle)),
-                const SizedBox(width: 5),
-                Text(emp.isActive ? 'Active' : 'Inactive', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: sc)),
-              ]),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.03) : AppTheme.lightBg3.withOpacity(0.5),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
+                border: Border(top: BorderSide(color: border)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.vpn_key_outlined, size: 14, color: AppTheme.primary),
+                  const SizedBox(width: 6),
+                  Text('Price Access ${emp.priceCAccess ? 'A+B+C' : emp.priceBAccess ? 'A+B' : 'A only'}', style: TextStyle(fontSize: 12, color: sub, fontWeight: FontWeight.w500)),
+                ],
+              ),
             ),
-          ])),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.03) : AppTheme.lightBg3.withOpacity(0.5),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
-              border: Border(top: BorderSide(color: border)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.vpn_key_outlined, size: 14, color: AppTheme.primary),
-                const SizedBox(width: 6),
-                Text('Price Access ${emp.priceCAccess ? 'A+B+C' : emp.priceBAccess ? 'A+B' : 'A only'}', style: TextStyle(fontSize: 12, color: sub, fontWeight: FontWeight.w500)),
-              ],
-            ),
-          ),
-        ]),
+          ]),
+        ))),
       ),
-    )))).animate().fadeIn(delay: Duration(milliseconds: 150 + idx * 50)).slideY(begin: 0.05);
+    ));
   }
 }
 
@@ -406,7 +411,7 @@ class _PermissionSheetState extends State<_PermissionSheet> {
               ),
             ],
           ),
-        ).animate().scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack, duration: 300.ms).fadeIn(),
+        ),
       ),
     );
     if (ok == true && mounted) { 
@@ -514,7 +519,7 @@ class _PermissionSheetState extends State<_PermissionSheet> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: const Text('Delete Employee Account', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-              )).animate(onPlay: (ctrl) => ctrl.repeat(reverse: true)).shimmer(duration: 2000.ms, color: Colors.white12),
+              )),
               const SizedBox(height: 12),
               SizedBox(width: double.infinity, height: 50, child: ElevatedButton(
                 onPressed: () => Navigator.pop(context),

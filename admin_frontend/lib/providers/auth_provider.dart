@@ -26,4 +26,13 @@ class AuthProvider extends ChangeNotifier {
     adminUser = null;
     notifyListeners();
   }
+
+  Future<void> refreshProfile() async {
+    final token = await _authService.getToken();
+    if (token == null) return;
+    try {
+      adminUser = await _authService.getProfile(token);
+      notifyListeners();
+    } catch (_) {}
+  }
 }

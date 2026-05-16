@@ -10,4 +10,6 @@ class ApiConstants {
   static const String setupRegister = '$baseUrl/admin/setup/register/';
   static const String forgotPassword = '$baseUrl/auth/forgot-password/';
   static const String resetPassword = '$baseUrl/auth/reset-password/';
+  static const String changePassword = '$baseUrl/admin/change-password/';
+  static const String health = '$baseUrl/admin/health/';
 }

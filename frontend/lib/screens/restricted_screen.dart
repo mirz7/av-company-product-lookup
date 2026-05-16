@@ -179,47 +179,52 @@ class _RestrictedScreenState extends State<RestrictedScreen> with TickerProvider
               const SizedBox(height: 32),
 
               // Check status button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _checking ? null : _checkNow,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9E2016),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: const Color(0xFF9E2016).withOpacity(0.5),
-                    elevation: 10,
-                    shadowColor: const Color(0xFF9E2016).withOpacity(0.4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _checking ? null : _checkNow,
+                  borderRadius: BorderRadius.circular(16),
+                  splashColor: Colors.white.withOpacity(0.2),
+                  child: Container(
+                    width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF9E2016).withOpacity(_checking ? 0.5 : 1.0),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: _checking ? null : [BoxShadow(color: const Color(0xFF9E2016).withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))],
+                    ),
+                    child: _checking
+                        ? const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)),
+                            SizedBox(width: 12),
+                            Text('Updating access...', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
+                          ])
+                        : const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                            Icon(Icons.security_update_good_rounded, size: 20, color: Colors.white),
+                            SizedBox(width: 10),
+                            Text('Re-verify Account', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                          ]),
                   ),
-                  child: _checking
-                      ? const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)),
-                          SizedBox(width: 12),
-                          Text('Updating access...', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                        ])
-                      : const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          Icon(Icons.security_update_good_rounded, size: 20),
-                          SizedBox(width: 10),
-                          Text('Re-verify Account', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                        ]),
                 ),
               ).animate().fadeIn(delay: 500.ms),
 
               const SizedBox(height: 12),
 
-              // Sign out
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: _logout,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: sub,
-                    side: BorderSide(color: border),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _logout,
+                  borderRadius: BorderRadius.circular(16),
+                  splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+                  child: Container(
+                    width: double.infinity,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: border),
+                    ),
+                    child: Center(child: Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w600, color: sub))),
                   ),
-                  child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ).animate().fadeIn(delay: 600.ms),
 

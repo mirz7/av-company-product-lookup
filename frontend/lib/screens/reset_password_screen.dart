@@ -98,15 +98,42 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             _field(_passCtrl, 'New Password', 'Enter your new password', Icons.lock_outline, textColor, sub, card, border, isPass: true),
             
             const SizedBox(height: 40),
-            SizedBox(width: double.infinity, height: 58,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _reset,
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.crimson, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Reset Password', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _isLoading ? null : _reset,
+                borderRadius: BorderRadius.circular(16),
+                splashColor: Colors.white.withOpacity(0.2),
+                child: Container(
+                  width: double.infinity,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: AppTheme.crimson.withOpacity(_isLoading ? 0.5 : 1.0),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: _isLoading ? null : [BoxShadow(color: AppTheme.crimson.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))],
+                  ),
+                  child: Center(
+                    child: _isLoading 
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)) 
+                      : const Text('Reset Password', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 20),
-            TextButton(onPressed: () => Navigator.popUntil(context, ModalRoute.withName('/login')), child: Text('Back to Login', style: TextStyle(color: sub))),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => Navigator.popUntil(context, ModalRoute.withName('/login')),
+                borderRadius: BorderRadius.circular(8),
+                splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text('Back to Login', style: TextStyle(color: sub)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
           ])),
         ))),
       ),

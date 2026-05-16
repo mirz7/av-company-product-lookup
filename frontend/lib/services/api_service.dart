@@ -383,4 +383,28 @@ class ApiService {
     );
     return response.statusCode == 200;
   }
+
+  Future<String?> changePassword(String oldPassword, String newPassword) async {
+    final token = await storage.read(key: 'access_token');
+    if (token == null) return 'Not authenticated';
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/change-password/'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'old_password': oldPassword,
+        'new_password': newPassword,
+      }),
+    );
+    if (response.statusCode == 200) return null;
+    try {
+      final data = jsonDecode(response.body);
+      return data['error'] ?? 'Failed to change password';
+    } catch (_) {
+      return 'Failed to change password';
+    }
+  }
 }

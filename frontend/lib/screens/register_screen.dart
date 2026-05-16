@@ -103,17 +103,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Row(
                     children: [
                       if (_currentStep == 1) ...[
-                        GestureDetector(
-                          onTap: () => setState(() => _currentStep = 0),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: borderColor),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => setState(() => _currentStep = 0),
+                            borderRadius: BorderRadius.circular(12),
+                            splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: borderColor),
+                              ),
+                              child: Icon(Icons.arrow_back_ios_new, color: textColor, size: 18),
                             ),
-                            child: Icon(Icons.arrow_back_ios_new, color: textColor, size: 18),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -306,15 +311,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   const SizedBox(height: 24),
                   Center(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: RichText(
-                        text: TextSpan(
-                          text: 'Already have an account? ',
-                          style: TextStyle(color: subTextColor, fontSize: 13),
-                          children: const [
-                            TextSpan(text: 'Sign In', style: TextStyle(color: AppTheme.crimsonGlow, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
-                          ],
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => Navigator.pop(context),
+                        borderRadius: BorderRadius.circular(8),
+                        splashColor: AppTheme.crimson.withOpacity(0.1),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: RichText(
+                            text: TextSpan(
+                              text: 'Already have an account? ',
+                              style: TextStyle(color: subTextColor, fontSize: 13),
+                              children: const [
+                                TextSpan(text: 'Sign In', style: TextStyle(color: AppTheme.crimsonGlow, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),

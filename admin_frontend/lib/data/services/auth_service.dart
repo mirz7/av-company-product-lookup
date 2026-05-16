@@ -95,6 +95,17 @@ class AuthService {
     }
   }
 
+  Future<AdminModel> getProfile(String token) async {
+    final response = await http.get(
+      Uri.parse(ApiConstants.authMe),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      return AdminModel.fromJson(jsonDecode(response.body), token);
+    }
+    throw Exception('Failed to fetch profile');
+  }
+
   Future<bool> resetPassword(String email, String otp, String newPassword) async {
     final response = await http.post(
       Uri.parse(ApiConstants.resetPassword),
@@ -106,5 +117,57 @@ class AuthService {
       }),
     );
     return response.statusCode == 200;
+  }
+
+  Future<bool> updateProfile(String firstName, String lastName, String email, String phoneNumber) async {
+    final token = await getToken();
+    final response = await http.put(
+      Uri.parse(ApiConstants.authMe),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'first_name': firstName,
+        'last_name': lastName,
+        'email': email,
+        'phone_number': phoneNumber,
+      }),
+    );
+    return response.statusCode == 200;
+  }
+
+  Future<String?> changePassword(String oldPassword, String newPassword) async {
+    final token = await getToken();
+    final response = await http.post(
+      Uri.parse(ApiConstants.changePassword),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'old_password': oldPassword,
+        'new_password': newPassword,
+      }),
+    );
+    if (response.statusCode == 200) return null;
+    try {
+      final data = jsonDecode(response.body);
+      return data['error'] ?? 'Failed to change password';
+    } catch (_) {
+      return 'Failed to change password';
+    }
+  }
+
+  Future<Map<String, dynamic>> getHealth() async {
+    final token = await getToken();
+    final response = await http.get(
+      Uri.parse(ApiConstants.health),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    return {'api_status': 'OFFLINE', 'db_status': 'Unknown', 'ping': '-'};
   }
 }

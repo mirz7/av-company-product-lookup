@@ -7,7 +7,8 @@ from .admin_views import (
     AdminDashboardView, AdminEmployeeListView, AdminEmployeeDetailView,
     AdminApprovalsView, AdminApproveEmployeeView, AdminRejectEmployeeView,
     AdminNotificationListView, AdminNotificationMarkReadView,
-    AuthMeView,
+    AdminNotificationListView, AdminNotificationMarkReadView,
+    AuthMeView, AdminChangePasswordView, AdminHealthView
 )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -41,4 +42,6 @@ urlpatterns = [
     path('admin/approvals/<int:pk>/reject/', AdminRejectEmployeeView.as_view(), name='admin_reject'),
     path('admin/notifications/', AdminNotificationListView.as_view(), name='admin_notifications'),
     path('admin/notifications/<int:pk>/mark-read/', AdminNotificationMarkReadView.as_view(), name='admin_mark_read'),
+    path('admin/change-password/', AdminChangePasswordView.as_view(), name='admin_change_password'),
+    path('admin/health/', AdminHealthView.as_view(), name='admin_health'),
 ]

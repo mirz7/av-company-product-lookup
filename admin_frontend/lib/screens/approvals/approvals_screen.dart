@@ -69,7 +69,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                 ),
                 child: Text('${prov.pendingCount} PENDING', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.danger, letterSpacing: 0.5)),
               ),
-          ])).animate().fadeIn(delay: 50.ms).slideY(begin: 0.05),
+          ])),
 
           Expanded(child: prov.isLoading
             ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
@@ -91,16 +91,16 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                         Text('All caught up!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textColor, letterSpacing: -0.5)),
                         const SizedBox(height: 8),
                         Text('There are no pending employee approvals.\nYour workspace is clean!', textAlign: TextAlign.center, style: TextStyle(color: sub, fontSize: 13, height: 1.5)),
-                      ]).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.95, 0.95)),
+                      ]),
                     ),
                   )
                 : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('Pending Requests', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textColor)).animate().fadeIn(delay: 80.ms),
+                        Text('Pending Requests', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textColor)),
                         const SizedBox(height: 4),
-                        Text('Manage new access requests from the retail team.', style: TextStyle(fontSize: 12, color: sub)).animate().fadeIn(delay: 100.ms),
+                        Text('Manage new access requests from the retail team.', style: TextStyle(fontSize: 12, color: sub)),
                       ]),
                     ),
                     Expanded(child: ListView.builder(
@@ -233,6 +233,6 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
           ),
         ]),
       ]),
-    )))).animate().fadeIn(delay: Duration(milliseconds: 150 + idx * 80)).slideY(begin: 0.05);
+    ))));
   }
 }

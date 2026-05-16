@@ -14,8 +14,13 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
+  final _otpCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _confirmPassCtrl = TextEditingController();
+  
   bool _isLoading = false;
   String? _error;
+  bool _isOtpSent = false;
   late AnimationController _pulse;
 
   @override
@@ -27,11 +32,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
   @override
   void dispose() {
     _emailCtrl.dispose();
+    _otpCtrl.dispose();
+    _passCtrl.dispose();
+    _confirmPassCtrl.dispose();
     _pulse.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  Future<void> _sendOtp() async {
     if (!_formKey.currentState!.validate()) return;
     
     setState(() {
@@ -46,10 +54,39 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('An OTP has been sent to your email.'))
       );
-      Navigator.pushNamed(context, '/reset-password', arguments: {'email': email});
+      setState(() => _isOtpSent = true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _verifyAndReset() async {
+    if (!_formKey.currentState!.validate()) return;
+    
+    if (_passCtrl.text != _confirmPassCtrl.text) {
+      setState(() => _error = 'Passwords do not match');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final ok = await ApiService().resetPassword(_emailCtrl.text.trim(), _otpCtrl.text.trim(), _passCtrl.text);
+      if (!mounted) return;
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password reset successful!')));
+        Navigator.popUntil(context, ModalRoute.withName('/login'));
+      } else {
+        setState(() => _error = 'Invalid OTP or email.');
+      }
+    } catch (_) {
+      setState(() => _error = 'An error occurred.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -73,39 +110,88 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
       body: Container(
         width: double.infinity, height: double.infinity,
         decoration: BoxDecoration(gradient: LinearGradient(colors: bgColors, begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-        child: SafeArea(child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: SafeArea(child: SingleChildScrollView(child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
           child: Form(key: _formKey, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Icons.lock_reset_rounded, size: 80, color: AppTheme.crimson).animate().scale(),
+            SizedBox(height: _isOtpSent ? 20 : 60),
+            Icon(_isOtpSent ? Icons.published_with_changes_rounded : Icons.lock_reset_rounded, size: 80, color: AppTheme.crimson).animate().scale(),
             const SizedBox(height: 24),
-            Text('FORGOT PASSWORD', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 1.5)),
+            Text(_isOtpSent ? 'RESET PASSWORD' : 'FORGOT PASSWORD', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 1.5)),
             const SizedBox(height: 8),
-            Text('Enter your email to receive recovery instructions.', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: sub)),
+            Text(_isOtpSent ? 'Enter the OTP sent to your email and your new password.' : 'Enter your email to receive recovery instructions.', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: sub)),
             const SizedBox(height: 40),
             
             if (_error != null)
               Container(padding: const EdgeInsets.all(12), margin: const EdgeInsets.only(bottom: 20), decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Text(_error!, style: const TextStyle(color: Colors.redAccent, fontSize: 13))),
 
-            _field(_emailCtrl, 'Email Address', 'Enter your registered email', Icons.email_outlined, textColor, sub, card, border),
+            if (!_isOtpSent) ...[
+              _field(_emailCtrl, 'Email Address', 'Enter your registered email', Icons.email_outlined, textColor, sub, card, border),
+            ] else ...[
+              _field(_emailCtrl, 'Email Address', 'Enter your registered email', Icons.email_outlined, textColor, sub, card, border, readOnly: true),
+              const SizedBox(height: 16),
+              _field(_otpCtrl, 'OTP', 'Enter 6-digit OTP', Icons.pin_outlined, textColor, sub, card, border),
+              const SizedBox(height: 16),
+              _field(_passCtrl, 'New Password', 'Enter your new password', Icons.lock_outline, textColor, sub, card, border, isPass: true),
+              const SizedBox(height: 16),
+              _field(_confirmPassCtrl, 'Confirm Password', 'Re-enter your new password', Icons.lock_outline, textColor, sub, card, border, isPass: true),
+            ],
+            
             const SizedBox(height: 32),
             
-            SizedBox(width: double.infinity, height: 58,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.crimson, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Send Reset Link', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _isLoading ? null : (_isOtpSent ? _verifyAndReset : _sendOtp),
+                borderRadius: BorderRadius.circular(16),
+                splashColor: Colors.white.withOpacity(0.2),
+                child: Container(
+                  width: double.infinity,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: AppTheme.crimson.withOpacity(_isLoading ? 0.5 : 1.0),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: _isLoading ? null : [BoxShadow(color: AppTheme.crimson.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))],
+                  ),
+                  child: Center(
+                    child: _isLoading 
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)) 
+                      : Text(_isOtpSent ? 'Verify & Reset' : 'Send OTP', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 24),
-            TextButton(onPressed: () => Navigator.pop(context), child: Text('Back to Login', style: TextStyle(color: sub))),
-            TextButton(onPressed: () => Navigator.pushNamed(context, '/reset-password'), child: const Text('Already have a token?', style: TextStyle(color: AppTheme.crimson, fontWeight: FontWeight.w600))),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  if (_isOtpSent) {
+                    setState(() {
+                      _isOtpSent = false;
+                      _error = null;
+                      _otpCtrl.clear();
+                      _passCtrl.clear();
+                      _confirmPassCtrl.clear();
+                    });
+                  } else {
+                    Navigator.pop(context);
+                  }
+                },
+                borderRadius: BorderRadius.circular(8),
+                splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(_isOtpSent ? 'Back to Email' : 'Back to Login', style: TextStyle(color: sub)),
+                ),
+              ),
+            ),
           ])),
-        )),
+        ))),
       ),
     );
   }
 
-  Widget _field(TextEditingController ctrl, String label, String hint, IconData icon, Color textColor, Color sub, Color card, Color border) {
+  Widget _field(TextEditingController ctrl, String label, String hint, IconData icon, Color textColor, Color sub, Color card, Color border, {bool isPass = false, bool readOnly = false}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: sub)),
       const SizedBox(height: 8),
@@ -115,8 +201,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: TextFormField(
             controller: ctrl,
+            obscureText: isPass,
+            readOnly: readOnly,
             style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w500),
-            validator: (v) => (v == null || !v.contains('@')) ? 'Invalid email' : null,
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Required';
+              if (!isPass && label.contains('Email') && !v.contains('@')) return 'Invalid email';
+              return null;
+            },
             decoration: InputDecoration(
               hintText: hint, hintStyle: TextStyle(color: sub.withOpacity(0.5)),
               prefixIcon: Icon(icon, color: AppTheme.crimson, size: 20),

@@ -103,18 +103,65 @@ class _SearchScreenState extends State<SearchScreen> {
 
           Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             // Tab bar
-            ClipRRect(borderRadius: BorderRadius.circular(14), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
-              child: Row(children: [
-                Expanded(child: GestureDetector(onTap: _cameraMode ? _deactivateCam : null, child: AnimatedContainer(duration: 300.ms, curve: Curves.easeInOut, padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(gradient: !_cameraMode ? const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]) : null, borderRadius: BorderRadius.circular(10), boxShadow: !_cameraMode ? [BoxShadow(color: AppTheme.primary.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))] : null),
-                  alignment: Alignment.center, child: Text('Product Code', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: !_cameraMode ? Colors.white : sub))))),
-                Expanded(child: GestureDetector(onTap: _cameraMode ? null : _activateCam, child: AnimatedContainer(duration: 300.ms, curve: Curves.easeInOut, padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(gradient: _cameraMode ? const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]) : null, borderRadius: BorderRadius.circular(10), boxShadow: _cameraMode ? [BoxShadow(color: AppTheme.primary.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))] : null),
-                  alignment: Alignment.center, child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.qr_code_scanner, size: 16, color: _cameraMode ? Colors.white : sub), const SizedBox(width: 6), Text('Barcode Scan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _cameraMode ? Colors.white : sub))])))),
-              ]),
-            ))).animate().fadeIn(delay: 200.ms),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
+                  child: Row(children: [
+                    Expanded(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _cameraMode ? _deactivateCam : null,
+                          borderRadius: BorderRadius.circular(10),
+                          splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.12),
+                          child: AnimatedContainer(
+                            duration: 300.ms, curve: Curves.easeInOut, padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              gradient: !_cameraMode ? const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]) : null,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: !_cameraMode ? [BoxShadow(color: AppTheme.primary.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))] : null
+                            ),
+                            alignment: Alignment.center,
+                            child: Text('Product Code', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: !_cameraMode ? Colors.white : sub)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _cameraMode ? null : _activateCam,
+                          borderRadius: BorderRadius.circular(10),
+                          splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.12),
+                          child: AnimatedContainer(
+                            duration: 300.ms, curve: Curves.easeInOut, padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              gradient: _cameraMode ? const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]) : null,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: _cameraMode ? [BoxShadow(color: AppTheme.primary.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))] : null
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.qr_code_scanner, size: 16, color: _cameraMode ? Colors.white : sub),
+                                const SizedBox(width: 6),
+                                Text('Barcode Scan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _cameraMode ? Colors.white : sub)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+            ).animate().fadeIn(delay: 200.ms),
             const SizedBox(height: 20),
             // Search / Camera
             if (_cameraMode)
@@ -133,9 +180,9 @@ class _SearchScreenState extends State<SearchScreen> {
                     decoration: InputDecoration(hintText: 'Search by name or code...', hintStyle: TextStyle(color: hint, fontSize: 16, fontWeight: FontWeight.w500), border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(vertical: 18)),
                     onSubmitted: (v) => _load(v), onChanged: (_) => setState(() {}))),
                   if (_ctrl.text.isNotEmpty) IconButton(icon: Icon(Icons.close_rounded, color: sub, size: 20), onPressed: () { _ctrl.clear(); setState(() => _error = null); _load(''); }),
-                  GestureDetector(onTap: () => _load(_ctrl.text.trim()), child: Container(margin: const EdgeInsets.all(8), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  Material(color: Colors.transparent, child: InkWell(onTap: () => _load(_ctrl.text.trim()), borderRadius: BorderRadius.circular(12), splashColor: Colors.white.withOpacity(0.2), child: Container(margin: const EdgeInsets.all(8), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                     decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]), borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]),
-                    child: const Text('Go', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)))),
+                    child: const Text('Go', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))))),
                 ]),
               ))).animate().fadeIn(delay: 300.ms).slideY(begin: 0.05),
             const SizedBox(height: 24),
@@ -171,30 +218,36 @@ class _SearchScreenState extends State<SearchScreen> {
     final pB = d['price_2']?.toString() ?? '—';
     final pC = d['price_3']?.toString() ?? '—';
 
-    return GestureDetector(
-      onTap: () => _showProductDetails(d),
-      child: ClipRRect(borderRadius: BorderRadius.circular(18), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: Container(
-      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(18), border: Border.all(color: isResult ? AppTheme.primary.withOpacity(0.25) : border), boxShadow: isResult ? [BoxShadow(color: AppTheme.primary.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8))] : null),
-      child: Column(children: [
-        Container(height: 4, decoration: BoxDecoration(gradient: LinearGradient(colors: [AppTheme.primary, AppTheme.primaryGlow]), borderRadius: const BorderRadius.vertical(top: Radius.circular(18)))),
-        Padding(padding: const EdgeInsets.only(left: 18, right: 18, top: 14, bottom: 10), child: Row(children: [
-          Container(width: 44, height: 44, decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.primary.withOpacity(0.25))), child: Icon(Icons.inventory_2_outlined, color: AppTheme.primaryGlow, size: 22)),
-          const SizedBox(width: 14),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor), maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 4),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBg3, borderRadius: BorderRadius.circular(6)), child: Text(code, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: sub, letterSpacing: 0.5))),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showProductDetails(d),
+        borderRadius: BorderRadius.circular(18),
+        splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.12),
+        child: ClipRRect(borderRadius: BorderRadius.circular(18), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: Container(
+        decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(18), border: Border.all(color: isResult ? AppTheme.primary.withOpacity(0.25) : border), boxShadow: isResult ? [BoxShadow(color: AppTheme.primary.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8))] : null),
+        child: Column(children: [
+          Container(height: 4, decoration: BoxDecoration(gradient: LinearGradient(colors: [AppTheme.primary, AppTheme.primaryGlow]), borderRadius: const BorderRadius.vertical(top: Radius.circular(18)))),
+          Padding(padding: const EdgeInsets.only(left: 18, right: 18, top: 14, bottom: 10), child: Row(children: [
+            Container(width: 44, height: 44, decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.primary.withOpacity(0.25))), child: Icon(Icons.inventory_2_outlined, color: AppTheme.primaryGlow, size: 22)),
+            const SizedBox(width: 14),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor), maxLines: 1, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 4),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBg3, borderRadius: BorderRadius.circular(6)), child: Text(code, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: sub, letterSpacing: 0.5))),
+            ])),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('₹$price', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: textColor)), Text('PRICE A', style: TextStyle(fontSize: 9, color: sub, letterSpacing: 1.5, fontWeight: FontWeight.bold))]),
           ])),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('₹$price', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: textColor)), Text('PRICE A', style: TextStyle(fontSize: 9, color: sub, letterSpacing: 1.5, fontWeight: FontWeight.bold))]),
-        ])),
-        Container(height: 1, color: border),
-        Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Row(children: [
-          Expanded(child: _pi('Price B', pB, textColor, sub, align: CrossAxisAlignment.center)),
-          Container(width: 1, height: 24, color: border),
-          Expanded(child: _pi('Price C', pC, textColor, sub, align: CrossAxisAlignment.center)),
-        ])),
-      ]),
-    )))).animate().fade(delay: Duration(milliseconds: delay > 500 ? 500 : delay), duration: 350.ms).slideY(begin: 0.06, delay: Duration(milliseconds: delay > 500 ? 500 : delay));
+          Container(height: 1, color: border),
+          Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Row(children: [
+            Expanded(child: _pi('Price B', pB, textColor, sub, align: CrossAxisAlignment.center)),
+            Container(width: 1, height: 24, color: border),
+            Expanded(child: _pi('Price C', pC, textColor, sub, align: CrossAxisAlignment.center)),
+          ])),
+        ]),
+      ))),
+      ),
+    ).animate().fade(delay: Duration(milliseconds: delay > 500 ? 500 : delay), duration: 350.ms).slideY(begin: 0.06, delay: Duration(milliseconds: delay > 500 ? 500 : delay));
   }
 
   void _showProductDetails(Map<String, dynamic> data) {

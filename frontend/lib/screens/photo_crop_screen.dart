@@ -338,17 +338,16 @@ class _SourceButtonState extends State<_SourceButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) { setState(() => _pressed = false); widget.onTap?.call(); },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.96 : 1.0,
-        duration: const Duration(milliseconds: 120),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(20),
+        splashColor: Colors.white.withOpacity(0.2),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: widget.isDark ? const Color(0xFF1A1A2A) : Colors.white,
+            color: widget.isDark ? const Color(0xFF1A1A2A).withOpacity(0.4) : Colors.white.withOpacity(0.7),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: widget.isDark 
@@ -356,13 +355,6 @@ class _SourceButtonState extends State<_SourceButton> {
                   : widget.color.withOpacity(0.12),
               width: 1.5,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(widget.isDark ? 0.2 : 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
-            ],
           ),
           child: Row(children: [
             Container(

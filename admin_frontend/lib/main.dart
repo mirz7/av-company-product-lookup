@@ -72,16 +72,16 @@ final _router = GoRouter(
     GoRoute(path: RouteConstants.register, builder: (_, __) => const AdminRegistrationScreen()),
     GoRoute(path: RouteConstants.forgotPassword, builder: (_, __) => const ForgotPasswordScreen()),
     GoRoute(path: RouteConstants.resetPassword, builder: (_, state) => ResetPasswordScreen(initialEmail: state.uri.queryParameters['email'])),
-    ShellRoute(
-      builder: (context, state, child) => AdminScaffold(child: child),
-      routes: [
-        GoRoute(path: RouteConstants.dashboard, pageBuilder: (context, state) => const NoTransitionPage(child: DashboardScreen())),
-        GoRoute(path: RouteConstants.search,    pageBuilder: (context, state) => const NoTransitionPage(child: SearchScreen())),
-        GoRoute(path: RouteConstants.employees, pageBuilder: (context, state) => const NoTransitionPage(child: EmployeesScreen())),
-        GoRoute(path: RouteConstants.approvals, pageBuilder: (context, state) => const NoTransitionPage(child: ApprovalsScreen())),
-        GoRoute(path: RouteConstants.profile,   pageBuilder: (context, state) => const NoTransitionPage(child: ProfileScreen())),
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) => AdminScaffold(navigationShell: navigationShell),
+      branches: [
+        StatefulShellBranch(routes: [GoRoute(path: RouteConstants.dashboard, pageBuilder: (context, state) => const NoTransitionPage(child: DashboardScreen()))]),
+        StatefulShellBranch(routes: [GoRoute(path: RouteConstants.search,    pageBuilder: (context, state) => const NoTransitionPage(child: SearchScreen()))]),
+        StatefulShellBranch(routes: [GoRoute(path: RouteConstants.employees, pageBuilder: (context, state) => const NoTransitionPage(child: EmployeesScreen()))]),
+        StatefulShellBranch(routes: [GoRoute(path: RouteConstants.profile,   pageBuilder: (context, state) => const NoTransitionPage(child: ProfileScreen()))]),
       ],
     ),
+    GoRoute(path: RouteConstants.approvals, builder: (context, state) => const ApprovalsScreen()),
   ],
 );
 
@@ -131,18 +131,13 @@ class AdminApp extends StatelessWidget {
 
 // ─── Shell with 4-tab bottom nav (matching Stitch design) ──────────────────
 class AdminScaffold extends StatelessWidget {
-  final Widget child;
-  const AdminScaffold({super.key, required this.child});
+  final StatefulNavigationShell navigationShell;
+  const AdminScaffold({super.key, required this.navigationShell});
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeProvider>().isDark;
-    final loc = GoRouterState.of(context).uri.toString();
-
-    int idx = 0;
-    if (loc == RouteConstants.search)    idx = 1;
-    if (loc == RouteConstants.employees) idx = 2;
-    if (loc == RouteConstants.profile)   idx = 3;
+    int idx = navigationShell.currentIndex;
 
     final navBg = isDark ? const Color(0xFF161622) : AppTheme.lightSurface;
     final border = isDark ? Colors.white.withOpacity(0.06) : AppTheme.lightBorder;
@@ -151,7 +146,7 @@ class AdminScaffold extends StatelessWidget {
     final pendingCount = dashboard.metrics?.pendingApprovals ?? 0;
 
     return Scaffold(
-      body: child,
+      body: navigationShell,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: navBg,
@@ -164,10 +159,10 @@ class AdminScaffold extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _NavItem(icon: Icons.dashboard_rounded,    label: 'Dashboard',  isActive: idx == 0, isDark: isDark, onTap: () => context.go(RouteConstants.dashboard)),
-                _NavItem(icon: Icons.search_rounded,       label: 'Search',     isActive: idx == 1, isDark: isDark, onTap: () => context.go(RouteConstants.search)),
-                _NavItem(icon: Icons.groups_rounded,       label: 'Employees',  isActive: idx == 2, isDark: isDark, badge: pendingCount > 0 ? '$pendingCount' : null, onTap: () => context.go(RouteConstants.employees)),
-                _NavItem(icon: Icons.person_rounded,       label: 'My Space',   isActive: idx == 3, isDark: isDark, onTap: () => context.go(RouteConstants.profile)),
+                _NavItem(icon: Icons.dashboard_rounded,    label: 'Dashboard',  isActive: idx == 0, isDark: isDark, onTap: () => navigationShell.goBranch(0)),
+                _NavItem(icon: Icons.search_rounded,       label: 'Search',     isActive: idx == 1, isDark: isDark, onTap: () => navigationShell.goBranch(1)),
+                _NavItem(icon: Icons.groups_rounded,       label: 'Employees',  isActive: idx == 2, isDark: isDark, badge: pendingCount > 0 ? '$pendingCount' : null, onTap: () => navigationShell.goBranch(2)),
+                _NavItem(icon: Icons.person_rounded,       label: 'My Space',   isActive: idx == 3, isDark: isDark, onTap: () => navigationShell.goBranch(3)),
               ],
             ),
           ),

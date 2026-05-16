@@ -42,6 +42,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
+    AppTheme.hasSeenInitialAnimations = false;
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.login(
       _usernameController.text.trim(),
@@ -246,31 +248,47 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          GestureDetector(
-                            onTap: () => setState(() => _rememberMe = !_rememberMe),
-                            child: Row(
-                              children: [
-                                AnimatedContainer(
-                                  duration: 200.ms,
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    color: _rememberMe ? AppTheme.crimson : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: _rememberMe ? AppTheme.crimson : subTextColor.withOpacity(0.4), width: 1.5),
-                                  ),
-                                  child: _rememberMe ? const Icon(Icons.check, color: Colors.white, size: 13) : null,
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => setState(() => _rememberMe = !_rememberMe),
+                              borderRadius: BorderRadius.circular(8),
+                              splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                                child: Row(
+                                  children: [
+                                    AnimatedContainer(
+                                      duration: 200.ms,
+                                      width: 20,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        color: _rememberMe ? AppTheme.crimson : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: _rememberMe ? AppTheme.crimson : subTextColor.withOpacity(0.4), width: 1.5),
+                                      ),
+                                      child: _rememberMe ? const Icon(Icons.check, color: Colors.white, size: 13) : null,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text('Remember me', style: TextStyle(fontSize: 13, color: subTextColor)),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                Text('Remember me', style: TextStyle(fontSize: 13, color: subTextColor)),
-                              ],
+                              ),
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () => Navigator.pushNamed(context, '/forgot-password'),
-                            child: Text(
-                              'Forgot password?',
-                              style: TextStyle(fontSize: 13, color: subTextColor, decoration: TextDecoration.underline, decorationColor: subTextColor.withOpacity(0.3)),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => Navigator.pushNamed(context, '/forgot-password'),
+                              borderRadius: BorderRadius.circular(8),
+                              splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                child: Text(
+                                  'Forgot password?',
+                                  style: TextStyle(fontSize: 13, color: subTextColor, decoration: TextDecoration.underline, decorationColor: subTextColor.withOpacity(0.3)),
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -280,29 +298,30 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                       // Login button
                       Consumer<AuthProvider>(
-                        builder: (context, auth, _) => SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: auth.isLoading ? null : _handleLogin,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.crimson,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: AppTheme.crimson.withOpacity(0.5),
-                              elevation: 16,
-                              shadowColor: AppTheme.crimson.withOpacity(0.6),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            ),
-                            child: auth.isLoading
-                                ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                                : const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.login_rounded, size: 20),
+                        builder: (context, auth, _) => Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: auth.isLoading ? null : _handleLogin,
+                            borderRadius: BorderRadius.circular(16),
+                            splashColor: Colors.white.withOpacity(0.2),
+                            child: Container(
+                              width: double.infinity,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: AppTheme.crimson.withOpacity(auth.isLoading ? 0.5 : 1.0),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: auth.isLoading ? null : [BoxShadow(color: AppTheme.crimson.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))],
+                              ),
+                              child: Center(
+                                child: auth.isLoading
+                                  ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                                  : const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                      Icon(Icons.login_rounded, size: 20, color: Colors.white),
                                       SizedBox(width: 10),
-                                      Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                                    ],
-                                  ),
+                                      Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Colors.white)),
+                                    ]),
+                              ),
+                            ),
                           ),
                         ),
                       ).animate().fadeIn(delay: 600.ms),
@@ -312,18 +331,26 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                       // Register link
                       Center(
-                        child: TextButton(
-                          onPressed: () => Navigator.pushNamed(context, '/register'),
-                          child: RichText(
-                            text: TextSpan(
-                              text: "Don't have an account? ",
-                              style: TextStyle(color: subTextColor, fontSize: 13),
-                              children: const [
-                                TextSpan(
-                                  text: 'Register Now',
-                                  style: TextStyle(color: AppTheme.crimsonGlow, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => Navigator.pushNamed(context, '/register'),
+                            borderRadius: BorderRadius.circular(12),
+                            splashColor: AppTheme.crimson.withOpacity(0.1),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: RichText(
+                                text: TextSpan(
+                                  text: "Don't have an account? ",
+                                  style: TextStyle(color: subTextColor, fontSize: 13),
+                                  children: const [
+                                    TextSpan(
+                                      text: 'Register Now',
+                                      style: TextStyle(color: AppTheme.crimsonGlow, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),

@@ -127,40 +127,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
           if (prov.metrics != null && prov.metrics!.pendingApprovals > 0)
             Padding(
               padding: const EdgeInsets.only(bottom: 24),
-              child: GestureDetector(
-                onTap: () => context.go(RouteConstants.approvals),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppTheme.warning.withValues(alpha: 0.15), AppTheme.warning.withValues(alpha: 0.05)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => context.go(RouteConstants.approvals),
+                  borderRadius: BorderRadius.circular(16),
+                  splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [AppTheme.warning.withValues(alpha: 0.15), AppTheme.warning.withValues(alpha: 0.05)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
                     ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: AppTheme.warning.withValues(alpha: 0.2), shape: BoxShape.circle),
-                        child: const Icon(Icons.notification_important_rounded, color: AppTheme.warning, size: 20),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('New Registrations', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14)),
-                            const SizedBox(height: 2),
-                            Text('${prov.metrics!.pendingApprovals} staff members are awaiting your approval.', 
-                              style: TextStyle(color: sub, fontSize: 12)),
-                          ],
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: AppTheme.warning.withValues(alpha: 0.2), shape: BoxShape.circle),
+                          child: const Icon(Icons.notification_important_rounded, color: AppTheme.warning, size: 20),
                         ),
-                      ),
-                      const Icon(Icons.chevron_right_rounded, color: AppTheme.warning),
-                    ],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('New Registrations', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                              const SizedBox(height: 2),
+                              Text('${prov.metrics!.pendingApprovals} staff members are awaiting your approval.', 
+                                style: TextStyle(color: sub, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right_rounded, color: AppTheme.warning),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -274,33 +279,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
   );
 
   Widget _metric(IconData icon, String label, String value, Color textColor, Color sub, Color card, Color border, int delay, bool isDark, {String? badge, VoidCallback? onTap}) {
-    return GestureDetector(onTap: onTap, child: ClipRRect(borderRadius: BorderRadius.circular(18), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: card,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
-        boxShadow: isDark ? [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 15, offset: const Offset(0, 4))] : [],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: AppTheme.primary, size: 18),
+        splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.12),
+        child: ClipRRect(borderRadius: BorderRadius.circular(18), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: card,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: border),
+            boxShadow: isDark ? [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 15, offset: const Offset(0, 4))] : [],
           ),
-          if (badge != null) ...[const Spacer(), Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(color: AppTheme.danger, borderRadius: BorderRadius.circular(10)),
-            child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
-          )],
-        ]),
-        const SizedBox(height: 14),
-        Text(label, style: TextStyle(fontSize: 11, color: sub, fontWeight: FontWeight.w500, letterSpacing: 0.3)),
-        const SizedBox(height: 6),
-        Text(value, style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: textColor, height: 1.0)),
-      ]),
-    )))).animate().fadeIn(delay: Duration(milliseconds: delay)).slideY(begin: 0.05);
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+                child: Icon(icon, color: AppTheme.primary, size: 18),
+              ),
+              if (badge != null) ...[const Spacer(), Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: AppTheme.danger, borderRadius: BorderRadius.circular(10)),
+                child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
+              )],
+            ]),
+            const SizedBox(height: 14),
+            Text(label, style: TextStyle(fontSize: 11, color: sub, fontWeight: FontWeight.w500, letterSpacing: 0.3)),
+            const SizedBox(height: 6),
+            Text(value, style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: textColor, height: 1.0)),
+          ]),
+        ))),
+      ),
+    ).animate().fadeIn(delay: Duration(milliseconds: delay)).slideY(begin: 0.05);
   }
 
   Widget _sectionHead(String title, String action, Color textColor, Color sub, VoidCallback onAction) => Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
