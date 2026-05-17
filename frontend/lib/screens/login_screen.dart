@@ -42,7 +42,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    AppTheme.hasSeenInitialAnimations = false;
+    AppTheme.hasSeenSearchAnimations = false;
+    AppTheme.hasSeenProfileAnimations = false;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.login(

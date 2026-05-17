@@ -14,7 +14,6 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
-  late AnimationController _progressController;
   final ApiService _apiService = ApiService();
 
   @override
@@ -26,33 +25,33 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
-    _progressController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2500),
-    )..forward();
-
     _checkLoginState();
   }
 
   Future<void> _checkLoginState() async {
-    await Future.delayed(const Duration(milliseconds: 2500));
-    final token = await _apiService.storage.read(key: 'access_token');
+    await Future.delayed(const Duration(milliseconds: 1000));
     if (!mounted) return;
 
+    final token = await _apiService.storage.read(key: 'access_token');
+    
+    Map<String, dynamic>? profile;
     if (token != null && token.isNotEmpty) {
-      // Token exists — check if admin has approved this employee
-      final profile = await _apiService.getProfile(forceRefresh: true);
-      if (!mounted) return;
-      if (profile != null) {
-        if (profile['is_active'] == false) {
-          Navigator.pushReplacementNamed(context, '/restricted');
-        } else if (profile['is_approved'] == true) {
-          Navigator.pushReplacementNamed(context, '/search');
-        } else {
-          Navigator.pushReplacementNamed(context, '/pending');
-        }
+      try {
+        profile = await _apiService.getProfile(forceRefresh: true);
+      } catch (_) {
+        profile = null;
+      }
+    }
+
+    if (!mounted) return;
+
+    if (token != null && token.isNotEmpty && profile != null) {
+      if (profile['is_active'] == false) {
+        Navigator.pushReplacementNamed(context, '/restricted');
+      } else if (profile['is_approved'] == true) {
+        Navigator.pushReplacementNamed(context, '/search');
       } else {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, '/pending');
       }
     } else {
       Navigator.pushReplacementNamed(context, '/login');
@@ -62,7 +61,6 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _pulseController.dispose();
-    _progressController.dispose();
     super.dispose();
   }
 
@@ -175,13 +173,14 @@ class _SplashScreenState extends State<SplashScreen>
                           borderRadius: BorderRadius.circular(4),
                           child: SizedBox(
                             height: 3,
-                            child: AnimatedBuilder(
-                              animation: _progressController,
-                              builder: (_, __) {
+                            child: TweenAnimationBuilder<double>(
+                              tween: Tween<double>(begin: 0.0, end: 1.0),
+                              duration: const Duration(milliseconds: 1000),
+                              builder: (context, value, child) {
                                 return LinearProgressIndicator(
-                                  value: _progressController.value,
+                                  value: value,
                                   backgroundColor: (isDark ? Colors.white : AppTheme.silverDark).withOpacity(0.12),
-                                  valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.crimsonGlow),
+                                  color: AppTheme.crimsonGlow,
                                 );
                               },
                             ),

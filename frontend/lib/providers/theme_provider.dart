@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AppTheme {
-  static bool hasSeenInitialAnimations = false;
+  static bool hasSeenSearchAnimations = false;
+  static bool hasSeenProfileAnimations = false;
   // ── Logo-extracted brand colors ──────────────────────────────────────
   static const Color crimson        = Color(0xFF9E2016); // Logo red
   static const Color crimsonLight   = Color(0xFFBF3328); // brighter red

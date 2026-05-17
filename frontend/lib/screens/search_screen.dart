@@ -37,10 +37,10 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     // Initial status check
     StatusChecker.checkAndRedirect();
 
-    // Mark that we've seen the initial animations after the first build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Mark that we've seen the search page animations after 1.5 seconds to allow them to complete playing
+    Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
-        AppTheme.hasSeenInitialAnimations = true;
+        AppTheme.hasSeenSearchAnimations = true;
       }
     });
   }
@@ -557,7 +557,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     );
   }
   Widget _maybeAnimate(Widget child, {Duration delay = Duration.zero, double slideY = -0.05}) {
-    if (AppTheme.hasSeenInitialAnimations) return child;
+    if (AppTheme.hasSeenSearchAnimations) return child;
     return child.animate().fadeIn(duration: 350.ms, delay: delay).slideY(begin: slideY, delay: delay);
   }
   Widget _buildProductCard(Map<String, dynamic> data, {bool isSearchResult = false, int delay = 0}) {
@@ -568,7 +568,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
 
     final name = data['name']?.isNotEmpty == true ? data['name'] : data['product_code'] ?? 'Product';
     final code = data['product_code'] ?? '';
-    final price = data['price']?.toString() ?? '—';
+    final price = data['price_1']?.toString() ?? '—';
     final priceB = data['price_2']?.toString() ?? '—';
     final priceC = data['price_3']?.toString() ?? '—';
 
@@ -581,6 +581,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
             onTap: () => _showProductDetails(data),
             borderRadius: BorderRadius.circular(18),
             child: Container(
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: isDark ? Colors.white.withOpacity(isSearchResult ? 0.1 : 0.07) : Colors.white.withOpacity(isSearchResult ? 0.92 : 0.8),
                 borderRadius: BorderRadius.circular(18),
@@ -653,7 +654,9 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                     child: Row(
                       children: [
                         Expanded(child: _buildPriceItem('Price B', priceB, center: true)),
+                        const SizedBox(width: 8),
                         Container(width: 1, height: 24, color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
+                        const SizedBox(width: 8),
                         Expanded(child: _buildPriceItem('Price C', priceC, center: true)),
                       ],
                     ),
@@ -681,7 +684,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
         final isDark = Provider.of<ThemeProvider>(context, listen: false).isDark;
         final name = data['name']?.isNotEmpty == true ? data['name'] : data['product_code'] ?? 'Product';
         final code = data['product_code'] ?? '';
-        final price = data['price']?.toString() ?? '—';
+        final price = data['price_1']?.toString() ?? '—';
         final priceB = data['price_2']?.toString() ?? '—';
         final priceC = data['price_3']?.toString() ?? '—';
 
@@ -796,8 +799,9 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                                   ],
                                 ),
                               ),
+                              const SizedBox(width: 16),
                               Container(width: 1, height: 44, color: isDark ? Colors.white12 : AppTheme.lightBorder),
-                              const SizedBox(width: 24),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,

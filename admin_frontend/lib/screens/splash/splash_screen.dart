@@ -16,18 +16,16 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
   late AnimationController _pulse;
-  late AnimationController _progress;
 
   @override
   void initState() {
     super.initState();
     _pulse = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
-    _progress = AnimationController(vsync: this, duration: const Duration(milliseconds: 2500))..forward();
     _check();
   }
 
   Future<void> _check() async {
-    await Future.delayed(const Duration(milliseconds: 2500));
+    await Future.delayed(const Duration(milliseconds: 1000));
     if (!mounted) return;
     
     // Check if initial setup is needed
@@ -48,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
 
   @override
-  void dispose() { _pulse.dispose(); _progress.dispose(); super.dispose(); }
+  void dispose() { _pulse.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +81,23 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             const SizedBox(height: 8),
             const SizedBox(height: 52),
             Padding(padding: const EdgeInsets.symmetric(horizontal: 60), child: Column(children: [
-              ClipRRect(borderRadius: BorderRadius.circular(4), child: SizedBox(height: 3, child: AnimatedBuilder(animation: _progress, builder: (_, __) => LinearProgressIndicator(value: _progress.value, backgroundColor: (isDark ? Colors.white : AppTheme.silverDark).withOpacity(0.12), valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryGlow))))),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: SizedBox(
+                  height: 3,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0.0, end: 1.0),
+                    duration: const Duration(milliseconds: 1000),
+                    builder: (context, value, child) {
+                      return LinearProgressIndicator(
+                        value: value,
+                        backgroundColor: (isDark ? Colors.white : AppTheme.silverDark).withOpacity(0.12),
+                        color: AppTheme.primaryGlow,
+                      );
+                    },
+                  ),
+                ),
+              ),
               const SizedBox(height: 12),
               Text('LOADING...', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: (isDark ? Colors.white : AppTheme.silverDark).withOpacity(0.35), letterSpacing: 2.0)).animate().fadeIn(delay: 600.ms),
             ])),

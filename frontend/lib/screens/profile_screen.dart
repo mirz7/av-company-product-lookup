@@ -29,6 +29,13 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
     _fetchProfile();
     // Initial status check
     StatusChecker.checkAndRedirect();
+
+    // Mark that we've seen the profile page animations after 1.5 seconds to allow them to complete playing
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        AppTheme.hasSeenProfileAnimations = true;
+      }
+    });
   }
 
   Future<void> _fetchProfile({bool forceRefresh = false}) async {
@@ -952,7 +959,7 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
   }
 
   Widget _maybeAnimate(Widget child, {Duration delay = Duration.zero}) {
-    if (AppTheme.hasSeenInitialAnimations) return child;
+    if (AppTheme.hasSeenProfileAnimations) return child;
     return child.animate().fadeIn(delay: delay).slideY(begin: 0.05);
   }
 
