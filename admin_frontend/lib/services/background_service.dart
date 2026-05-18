@@ -61,7 +61,7 @@ void onStart(ServiceInstance service) async {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   
   // MUST initialize inside onStart for background notifications to work visually
-  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_notification');
   const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
@@ -105,7 +105,7 @@ void onStart(ServiceInstance service) async {
                 importance: Importance.max,
                 priority: Priority.high,
                 ticker: 'ticker',
-                icon: '@mipmap/ic_launcher',
+                icon: 'ic_notification',
                 largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
                 ongoing: false,
                 styleInformation: BigTextStyleInformation(''),

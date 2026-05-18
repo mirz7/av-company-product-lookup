@@ -26,6 +26,9 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.user.username} - Level {self.price_level}"
 
+    class Meta:
+        db_table = 'av_portal_user_profile'
+
 class AdminNotification(models.Model):
     NOTIFICATION_TYPES = [
         ('new_registration', 'New Staff Registration'),
@@ -40,6 +43,7 @@ class AdminNotification(models.Model):
 
     class Meta:
         ordering = ['-timestamp']
+        db_table = 'av_portal_admin_notification'
 
     def __str__(self):
         return f"{self.title} - {'Read' if self.is_read else 'Unread'}"
@@ -101,6 +105,7 @@ class ActivityLog(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        db_table = 'av_portal_activity_log'
 
     def __str__(self):
         return f"[{self.activity_type}] {self.title}"
@@ -113,3 +118,6 @@ class FCMToken(models.Model):
 
     def __str__(self):
         return f'{self.user.username} - {self.token[:20]}...'
+
+    class Meta:
+        db_table = 'av_portal_fcm_token'

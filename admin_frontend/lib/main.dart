@@ -32,7 +32,7 @@ void main() async {
   if (!kIsWeb) {
     // Initialize notifications for foreground tap handling
     final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_notification');
     const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
     
     await flutterLocalNotificationsPlugin.initialize(
@@ -44,8 +44,14 @@ void main() async {
       },
     );
 
+    // Request permissions for Android 13+ (API 33+)
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+
     await initializeService();
   }
+
   
   runApp(
     MultiProvider(
