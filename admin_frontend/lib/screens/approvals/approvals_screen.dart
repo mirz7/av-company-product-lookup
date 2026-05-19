@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/approval_provider.dart';
 import '../../data/models/employee_model.dart';
@@ -109,6 +111,29 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                       itemCount: prov.pendingApprovals.length,
                       itemBuilder: (ctx, i) => _card(ctx, prov.pendingApprovals[i], prov, isDark, card, border, textColor, sub, i))),
                   ])),
+          ),
+          
+          // Bottom button to route to Employees Page
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton.icon(
+                onPressed: () => context.go(RouteConstants.employees),
+                icon: Icon(Icons.groups_rounded, color: isDark ? Colors.white : AppTheme.primary),
+                label: Text('Manage Employees', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.primary, letterSpacing: 0.5)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDark ? AppTheme.primary : AppTheme.lightSurface,
+                  elevation: isDark ? 8 : 4,
+                  shadowColor: isDark ? AppTheme.primary.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: isDark ? BorderSide.none : BorderSide(color: AppTheme.primary.withValues(alpha: 0.2)),
+                  ),
+                ),
+              ),
+            ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
           ),
         ])),
       ),

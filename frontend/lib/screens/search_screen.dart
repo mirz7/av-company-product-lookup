@@ -569,8 +569,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     final name = data['name']?.isNotEmpty == true ? data['name'] : data['product_code'] ?? 'Product';
     final code = data['product_code'] ?? '';
     final price = data['price_1']?.toString() ?? '—';
-    final priceB = data['price_2']?.toString() ?? '—';
-    final priceC = data['price_3']?.toString() ?? '—';
+    // Extended prices moved to detail view
 
     return _maybeAnimate(
       Container(
@@ -644,24 +643,20 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                     ],
                   ),
                 ),
-                // Only show divider and extended prices if access is granted
-                if (_canSeeExtendedPrices) ...[
-                  // Divider
-                  Container(height: 1, color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.lightBorder),
-                  // Extended Prices Row (B and C)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Row(
-                      children: [
-                        Expanded(child: _buildPriceItem('Price B', priceB, center: true)),
-                        const SizedBox(width: 8),
-                        Container(width: 1, height: 24, color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
-                        const SizedBox(width: 8),
-                        Expanded(child: _buildPriceItem('Price C', priceC, center: true)),
-                      ],
-                    ),
+                // Divider
+                Container(height: 1, color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.lightBorder),
+                // Simple clickable indicator
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Tap for details', style: TextStyle(fontSize: 10, color: isDark ? Colors.white54 : AppTheme.lightSubText)),
+                      const SizedBox(width: 4),
+                      Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: isDark ? Colors.white54 : AppTheme.lightSubText),
+                    ],
                   ),
-                ],
+                ),
               ]),
             ),
           ),
@@ -843,19 +838,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     );
   }
 
-  Widget _buildPriceItem(String label, String value, {bool center = false}) {
-    final isDark = context.read<ThemeProvider>().isDark;
-    final textColor = isDark ? Colors.white : AppTheme.lightText;
-    final subTextColor = isDark ? Colors.white54 : AppTheme.lightSubText;
-    return Column(
-      crossAxisAlignment: center ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-      children: [
-        Text(label.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: subTextColor, letterSpacing: 1.0)),
-        const SizedBox(height: 2),
-        Text('₹$value', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textColor)),
-      ],
-    );
-  }
+
 
   Widget _buildErrorBanner(String msg) {
     return ClipRRect(

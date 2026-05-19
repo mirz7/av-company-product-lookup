@@ -9,7 +9,8 @@ import '../providers/theme_provider.dart';
 
 class PhotoCropScreen extends StatefulWidget {
   final String? initialImagePath;
-  const PhotoCropScreen({super.key, this.initialImagePath});
+  final String title;
+  const PhotoCropScreen({super.key, this.initialImagePath, this.title = 'Update Profile Photo'});
 
   @override
   State<PhotoCropScreen> createState() => _PhotoCropScreenState();
@@ -79,7 +80,7 @@ class _PhotoCropScreenState extends State<PhotoCropScreen> {
         aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
         uiSettings: [
           AndroidUiSettings(
-            toolbarTitle: 'Edit Profile Photo',
+            toolbarTitle: widget.title,
             toolbarColor: Colors.black,
             toolbarWidgetColor: Colors.white,
             activeControlsWidgetColor: const Color(0xFF9E2016),
@@ -92,7 +93,7 @@ class _PhotoCropScreenState extends State<PhotoCropScreen> {
             hideBottomControls: true,
           ),
           IOSUiSettings(
-            title: 'Edit Profile Photo',
+            title: widget.title,
             aspectRatioLockEnabled: true,
             resetAspectRatioEnabled: false,
             cropStyle: CropStyle.circle,
@@ -136,7 +137,7 @@ class _PhotoCropScreenState extends State<PhotoCropScreen> {
     // This screen is used as a bottom sheet launcher — it shows the source picker
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0D0D12) : Colors.white,
+        color: isDark ? AppTheme.darkBg1 : AppTheme.lightBg1,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 36),
@@ -149,7 +150,7 @@ class _PhotoCropScreenState extends State<PhotoCropScreen> {
               width: 40, height: 4,
               margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.4),
+                color: isDark ? Colors.white30 : AppTheme.lightBorder,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -160,7 +161,7 @@ class _PhotoCropScreenState extends State<PhotoCropScreen> {
             width: 64, height: 64,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF9E2016), Color(0xFFD63031)],
+                colors: [AppTheme.crimson, AppTheme.crimsonLight],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -172,17 +173,17 @@ class _PhotoCropScreenState extends State<PhotoCropScreen> {
 
           const SizedBox(height: 16),
           Text(
-            'Update Profile Photo',
+            widget.title,
             style: TextStyle(
               fontSize: 20, fontWeight: FontWeight.w800,
-              color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+              color: isDark ? Colors.white : AppTheme.lightText,
             ),
           ).animate().fadeIn(delay: 100.ms),
           const SizedBox(height: 6),
           Text(
             'Choose a source to pick your photo.\nYour photo will be cropped to a circle.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.black54, height: 1.5, letterSpacing: 0.2),
+            style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : AppTheme.lightSubText, height: 1.5, letterSpacing: 0.2),
           ).animate().fadeIn(delay: 150.ms),
 
           const SizedBox(height: 32),
@@ -347,12 +348,10 @@ class _SourceButtonState extends State<_SourceButton> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: widget.isDark ? const Color(0xFF1A1A2A).withOpacity(0.4) : Colors.white.withOpacity(0.7),
+            color: widget.isDark ? AppTheme.darkCard : Colors.white.withOpacity(0.5),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: widget.isDark 
-                  ? Colors.white.withOpacity(0.08) 
-                  : widget.color.withOpacity(0.12),
+              color: widget.isDark ? AppTheme.darkBorder : AppTheme.lightBorder,
               width: 1.5,
             ),
           ),
@@ -382,13 +381,13 @@ class _SourceButtonState extends State<_SourceButton> {
               children: [
                 Text(widget.label, style: TextStyle(
                   fontSize: 16, fontWeight: FontWeight.w800,
-                  color: widget.isDark ? Colors.white : const Color(0xFF1A1A2E),
+                  color: widget.isDark ? Colors.white : AppTheme.lightText,
                   letterSpacing: 0.3,
                 )),
                 const SizedBox(height: 3),
                 Text(widget.subtitle, style: TextStyle(
                   fontSize: 12,
-                  color: widget.isDark ? Colors.white54 : Colors.black45,
+                  color: widget.isDark ? Colors.white54 : AppTheme.lightSubText,
                   fontWeight: FontWeight.w500,
                 )),
               ],

@@ -5,6 +5,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../services/api_service.dart';
+import 'dart:io';
+import 'photo_crop_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -23,11 +25,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
 
   String _selectedRole = 'Sales';
-  final _roles = ['Sales', 'Manager', 'Admin', 'Warehouse', 'Accounts'];
+  final _roles = ['Sales', 'Manager', 'Warehouse', 'Accounts'];
 
   bool _passwordVisible = false;
   bool _confirmPasswordVisible = false;
-  int _currentStep = 0; // 0 = personal info, 1 = credentials
+  int _currentStep = 0; // 0 = personal info, 1 = photo, 2 = credentials
+  String? _profilePhotoPath;
 
   @override
   void dispose() {
@@ -58,6 +61,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // Auto-login then go to pending approval screen
       final api = ApiService();
       await api.login(_usernameController.text.trim(), _passwordController.text);
+      if (_profilePhotoPath != null) {
+        await api.updateProfilePhoto(_profilePhotoPath!);
+      }
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, '/pending', (route) => false);
     }
@@ -96,33 +102,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 child: IntrinsicHeight(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Back button + header
+                  const SizedBox(height: 16),
+                  // Header
                   Row(
                     children: [
-                      if (_currentStep == 1) ...[
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () => setState(() => _currentStep = 0),
-                            borderRadius: BorderRadius.circular(12),
-                            splashColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08),
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: borderColor),
-                              ),
-                              child: Icon(Icons.arrow_back_ios_new, color: textColor, size: 18),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                      ],
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,10 +136,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   // Step indicator
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildStepDot(0, 'Personal Info'),
-                      Expanded(child: Container(height: 1, color: _currentStep >= 1 ? const Color(0xFF9E2016) : Colors.white.withOpacity(0.2))),
-                      _buildStepDot(1, 'Credentials'),
+                      Expanded(child: Container(margin: const EdgeInsets.only(top: 15), height: 2, color: _currentStep >= 1 ? const Color(0xFF9E2016) : Colors.white.withOpacity(0.2))),
+                      _buildStepDot(1, 'Photo'),
+                      Expanded(child: Container(margin: const EdgeInsets.only(top: 15), height: 2, color: _currentStep >= 2 ? const Color(0xFF9E2016) : Colors.white.withOpacity(0.2))),
+                      _buildStepDot(2, 'Credentials'),
                     ],
                   ).animate().fadeIn(delay: 200.ms),
 
@@ -198,8 +187,103 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _buildNextButton().animate().fadeIn(delay: 450.ms),
                   ],
 
-                  // STEP 2: Credentials
+                  // STEP 1: Photo
                   if (_currentStep == 1) ...[
+                    _buildSectionLabel('PROFILE PHOTO'),
+                    const Spacer(flex: 2),
+                    Center(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final croppedPath = await showModalBottomSheet<String>(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            barrierColor: Colors.black.withOpacity(0.6),
+                            builder: (_) => const PhotoCropScreen(title: 'Upload Profile Photo'),
+                          );
+                          if (croppedPath != null && mounted) {
+                            setState(() => _profilePhotoPath = croppedPath);
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          height: 220,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
+                            border: Border.all(color: const Color(0xFF9E2016).withOpacity(0.3), width: 2),
+                          ),
+                          child: _profilePhotoPath != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(22),
+                                  child: Image.file(
+                                    File(_profilePhotoPath!),
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  ),
+                                )
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF9E2016).withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.add_a_photo_outlined, size: 36, color: Color(0xFF9E2016)),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text('Upload Profile Photo', style: TextStyle(fontSize: 16, color: textColor, fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 8),
+                                    Text('Tap to open camera or gallery', style: TextStyle(fontSize: 13, color: subTextColor, fontWeight: FontWeight.w500)),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 200.ms),
+                    const Spacer(flex: 3),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () => setState(() => _currentStep = 2),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF9E2016),
+                          foregroundColor: Colors.white,
+                          elevation: 12,
+                          shadowColor: const Color(0xFF9E2016).withOpacity(0.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(_profilePhotoPath != null ? 'Continue' : 'Skip for now', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.arrow_forward_rounded, size: 20),
+                          ],
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 300.ms),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton(
+                        onPressed: () => setState(() => _currentStep = 0),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: subTextColor,
+                          side: BorderSide(color: borderColor),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: const Text('Back', style: TextStyle(fontWeight: FontWeight.w600)),
+                      ),
+                    ).animate().fadeIn(delay: 350.ms),
+                  ],
+
+                  // STEP 2: Credentials
+                  if (_currentStep == 2) ...[
                     _buildSectionLabel('ACCOUNT CREDENTIALS'),
                     const SizedBox(height: 16),
                     _buildField(
@@ -294,7 +378,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               width: double.infinity,
                               height: 48,
                               child: OutlinedButton(
-                                onPressed: () => setState(() => _currentStep = 0),
+                                onPressed: () => setState(() => _currentStep = 1),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: subTextColor,
                                   side: BorderSide(color: borderColor),
@@ -309,7 +393,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ).animate().fadeIn(delay: 350.ms),
                   ],
 
-                  const SizedBox(height: 24),
+                  const Spacer(),
                   Center(
                     child: Material(
                       color: Colors.transparent,
@@ -366,7 +450,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 10, color: isActive ? subTextColor : (isDark ? Colors.white30 : AppTheme.lightSubText.withOpacity(0.5)), fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+        SizedBox(
+          width: 76,
+          child: Text(
+            label, 
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 10, color: isActive ? subTextColor : (isDark ? Colors.white30 : AppTheme.lightSubText.withOpacity(0.5)), fontWeight: FontWeight.w600, letterSpacing: 0.2),
+          ),
+        ),
       ],
     );
   }
