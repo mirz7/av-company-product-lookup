@@ -24,7 +24,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() { super.initState(); _load(''); }
 
-  Future<void> _load(String q, {bool fromBarcode = false}) async {
+  Future<void> _load(String q) async {
     setState(() { _loading = true; _error = null; });
     final d = await _svc.searchProductsRaw(q);
     if (mounted) {
@@ -34,9 +34,6 @@ class _SearchScreenState extends State<SearchScreen> {
         if (q.isEmpty) _total = d?.length ?? 0; 
         else if (d == null || d.isEmpty) _error = 'No products matched "$q".'; 
       });
-      if (fromBarcode && d != null && d.length == 1) {
-        _showProductDetails(d.first);
-      }
     }
   }
 
@@ -44,7 +41,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void _deactivateCam() { _cam?.dispose(); _cam = null; setState(() => _cameraMode = false); }
   void _onDetect(BarcodeCapture c) {
     final v = c.barcodes.first.rawValue;
-    if (v != null && v.isNotEmpty) { _deactivateCam(); _ctrl.text = v; _load(v, fromBarcode: true); }
+    if (v != null && v.isNotEmpty) { _deactivateCam(); _ctrl.text = v; _load(v); }
   }
 
   @override
@@ -236,14 +233,20 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(height: 4),
               Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.08) : AppTheme.lightBg3, borderRadius: BorderRadius.circular(6)), child: Text(code, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: sub, letterSpacing: 0.5))),
             ])),
-            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('₹$price', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: textColor)), Text('PRICE A', style: TextStyle(fontSize: 9, color: sub, letterSpacing: 1.5, fontWeight: FontWeight.bold))]),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('₹$price', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: textColor)), Text('PRICE', style: TextStyle(fontSize: 9, color: sub, letterSpacing: 1.5, fontWeight: FontWeight.bold))]),
           ])),
           Container(height: 1, color: border),
-          Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Row(children: [
-            Expanded(child: _pi('Price B', pB, textColor, sub, align: CrossAxisAlignment.center)),
-            Container(width: 1, height: 24, color: border),
-            Expanded(child: _pi('Price C', pC, textColor, sub, align: CrossAxisAlignment.center)),
-          ])),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Tap for details', style: TextStyle(fontSize: 10, color: sub)),
+                const SizedBox(width: 4),
+                Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: sub),
+              ],
+            ),
+          ),
         ]),
       ))),
       ),
