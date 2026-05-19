@@ -66,7 +66,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     });
   }
 
-  Future<void> _searchProduct({bool fromBarcode = false}) async {
+  Future<void> _searchProduct() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) {
       _loadInitialProducts();
@@ -84,9 +84,6 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
         if (data != null && data.isNotEmpty) { _products = data; }
         else { _errorMessage = 'No products matched "$query".'; }
       });
-      if (fromBarcode && data != null && data.length == 1) {
-        _showProductDetails(data.first);
-      }
     }
   }
 
@@ -108,7 +105,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     if (rawValue != null && rawValue.isNotEmpty) {
       _deactivateCameraMode();
       _searchController.text = rawValue;
-      _searchProduct(fromBarcode: true);
+      _searchProduct();
     }
   }
 
