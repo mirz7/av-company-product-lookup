@@ -41,12 +41,16 @@ class AuthService {
   }
 
   Future<bool> isAdminSetupNeeded() async {
-    final response = await http.get(Uri.parse(ApiConstants.setupCheck));
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return !(data['admin_exists'] ?? true);
+    try {
+      final response = await http.get(Uri.parse(ApiConstants.setupCheck));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return !(data['admin_exists'] ?? true);
+      }
+      return false;
+    } catch (e) {
+      return false;
     }
-    return false;
   }
 
   Future<void> registerAdmin(Map<String, String> data) async {

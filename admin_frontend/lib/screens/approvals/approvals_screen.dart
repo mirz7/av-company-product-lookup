@@ -156,14 +156,35 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Container(
-            width: 52, height: 52,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [ac, ac.withValues(alpha: 0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [BoxShadow(color: ac.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))],
+          GestureDetector(
+            onTap: emp.profilePhotoUrl != null ? () => _viewPhoto(ctx, emp.profilePhotoUrl!, emp.fullName, emp.id) : null,
+            child: Hero(
+              tag: 'emp_avatar_${emp.id}',
+              child: Container(
+                width: 52, height: 52,
+                decoration: BoxDecoration(
+                  gradient: emp.profilePhotoUrl == null
+                      ? LinearGradient(colors: [ac, ac.withValues(alpha: 0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+                      : null,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [BoxShadow(color: ac.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))],
+                ),
+                child: emp.profilePhotoUrl != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.network(
+                          emp.profilePhotoUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Center(
+                            child: Text(initialText.isEmpty ? '??' : initialText,
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
+                          ),
+                        ),
+                      )
+                    : Center(child: Text(initialText.isEmpty ? '??' : initialText,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18))),
+              ),
             ),
-            child: Center(child: Text(initialText.isEmpty ? '??' : initialText, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18))),
           ),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -259,5 +280,91 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
         ]),
       ]),
     ))));
+  }
+}
+
+void _viewPhoto(BuildContext context, String url, String name, int id) {
+  Navigator.push(context, PageRouteBuilder(
+    opaque: false,
+    barrierColor: Colors.black.withOpacity(0.3),
+    transitionDuration: const Duration(milliseconds: 250),
+    reverseTransitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (context, _, __) => _PhotoPreview(url: url, name: name, id: id),
+  ));
+}
+
+// ─── Photo Preview Overlay (Hero Animation & Glassmorphism) ────────────
+class _PhotoPreview extends StatelessWidget {
+  final String url;
+  final String name;
+  final int id;
+
+  const _PhotoPreview({required this.url, required this.name, required this.id});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.pop(context),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+                child: Container(color: Colors.black.withOpacity(0.55)),
+              ),
+            ),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                    child: Text(
+                      name.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 1.5),
+                    ),
+                  ),
+                  Hero(
+                    tag: 'emp_avatar_$id',
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.9,
+                        maxHeight: MediaQuery.of(context).size.height * 0.65,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(color: AppTheme.primary.withOpacity(0.2), blurRadius: 50, spreadRadius: 5),
+                          BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 30, offset: const Offset(0, 10)),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(28),
+                        child: Image.network(
+                          url,
+                          fit: BoxFit.contain,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  Text(
+                    'TAP ANYWHERE TO CLOSE',
+                    style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.5),
+                  ).animate(onPlay: (c) => c.repeat(reverse: true)).fadeIn(duration: 1.seconds),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

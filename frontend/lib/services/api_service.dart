@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   // Use the PC's local IP address so the physical Android device can connect over Wi-Fi
   static const String baseUrl =
-      'http://192.168.1.5:8000/api';
+      kIsWeb ? 'http://127.0.0.1:8000/api' : 'http://192.168.1.6:8000/api';
   final storage = const FlutterSecureStorage();
 
   // ── In-memory product cache ──────────────────────────────────────────────

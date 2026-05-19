@@ -13,7 +13,7 @@ class NotificationProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   int get unreadCount => _unreadCount;
 
-  static const String baseUrl = 'http://192.168.1.5:8000/api';
+  static const String baseUrl = 'http://192.168.1.6:8000/api';
 
   Future<void> fetchNotifications() async {
     _isLoading = true;

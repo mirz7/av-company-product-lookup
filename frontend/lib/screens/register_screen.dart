@@ -91,20 +91,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: SafeArea(
           child: Form(
             key: _formKey,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height -
-                      MediaQuery.of(context).padding.top -
-                      MediaQuery.of(context).padding.bottom -
-                      32,
-                ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: CustomScrollView(
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                   const SizedBox(height: 16),
                   // Header
                   Row(
@@ -190,7 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // STEP 1: Photo
                   if (_currentStep == 1) ...[
                     _buildSectionLabel('PROFILE PHOTO'),
-                    const Spacer(flex: 2),
+                    const SizedBox(height: 48),
                     Center(
                       child: GestureDetector(
                         onTap: () async {
@@ -206,8 +202,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           }
                         },
                         child: Container(
-                          width: double.infinity,
-                          height: 220,
+                          width: MediaQuery.of(context).size.width * 0.85,
+                          height: MediaQuery.of(context).size.width * 0.85,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(24),
                             color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
@@ -243,7 +239,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     ).animate().fadeIn(delay: 200.ms),
-                    const Spacer(flex: 3),
+                    const SizedBox(height: 64),
                     SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -273,8 +269,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: OutlinedButton(
                         onPressed: () => setState(() => _currentStep = 0),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: subTextColor,
-                          side: BorderSide(color: borderColor),
+                          foregroundColor: isDark ? Colors.white70 : const Color(0xFF1A1A2E),
+                          side: BorderSide(color: isDark ? Colors.white24 : Colors.black26),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         child: const Text('Back', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -380,8 +376,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               child: OutlinedButton(
                                 onPressed: () => setState(() => _currentStep = 1),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: subTextColor,
-                                  side: BorderSide(color: borderColor),
+                                  foregroundColor: isDark ? Colors.white70 : const Color(0xFF1A1A2E),
+                                  side: BorderSide(color: isDark ? Colors.white24 : Colors.black26),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                 ),
                                 child: const Text('Back', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -393,7 +389,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ).animate().fadeIn(delay: 350.ms),
                   ],
 
-                  const Spacer(),
+                  const SizedBox(height: 32),
                   Center(
                     child: Material(
                       color: Colors.transparent,
@@ -416,16 +412,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                   ).animate().fadeIn(delay: 500.ms),
-                  const SizedBox(height: 16),
                 ],
               ),
             ),
           ),
-        ),
+        ],
       ),
     ),
   ),
-);
+),
+    );
   }
 
   Widget _buildStepDot(int step, String label) {
