@@ -81,16 +81,25 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Django app tables (users, profiles, notifications, activity logs, etc.)
+# Use SQLite so the app runs independently of the billing SQL Server.
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'myapp_db'),
-        'USER': os.environ.get('DB_USER', 'root'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '3306'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# ── Microsoft SQL Server connection settings (billing database) ──────────────
+# These credentials are used ONLY by raw pyodbc queries in the product-search
+# view and are never touched by Django's ORM / migration system.
+# Populate these values in the .env file on the host machine.
+MSSQL_DB_SERVER   = os.environ.get('MSSQL_SERVER',   'localhost')   # e.g. localhost\SQLEXPRESS
+MSSQL_DB_PORT     = os.environ.get('MSSQL_PORT',     '1433')
+MSSQL_DB_NAME     = os.environ.get('MSSQL_DB_NAME',  '')            # billing database name
+MSSQL_DB_USER     = os.environ.get('MSSQL_USER',     '')            # leave blank to use Windows Auth
+MSSQL_DB_PASSWORD = os.environ.get('MSSQL_PASSWORD', '')            # leave blank to use Windows Auth
+MSSQL_DRIVER      = os.environ.get('MSSQL_DRIVER',   'ODBC Driver 17 for SQL Server')
 
 
 # Password validation

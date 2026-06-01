@@ -43,7 +43,7 @@ class DashboardProvider extends ChangeNotifier {
   void _playNotificationSound() async {
     try {
       // Clean "Ping" notification sound
-      await _audioPlayer.play(UrlSource('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
+      await _audioPlayer.play(AssetSource('sounds/action.mp3'));
     } catch (e) {
       debugPrint('Error playing notification sound: $e');
     }

@@ -1,3 +1,1 @@
-import pymysql
-
-pymysql.install_as_MySQLdb()
+# No database driver bootstrap needed — default backend is SQLite.

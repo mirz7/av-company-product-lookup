@@ -6,9 +6,16 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
+  // Toggle this to true to enable the isolated testing database environment!
+  static const bool useTestingDatabase = true;
+
   // Use the PC's local IP address so the physical Android device can connect over Wi-Fi
   static const String baseUrl =
-      kIsWeb ? 'http://127.0.0.1:8000/api' : 'http://192.168.1.6:8000/api';
+      kIsWeb ? 'http://127.0.0.1:8000/api' : 'http://192.168.1.5:8000/api';
+
+  static const String testBaseUrl =
+      kIsWeb ? 'http://127.0.0.1:8001/test' : 'http://192.168.1.5:8001/test';
+
   final storage = const FlutterSecureStorage();
 
   // ── In-memory product cache ──────────────────────────────────────────────
@@ -42,6 +49,25 @@ class ApiService {
 
   /// Fetches all products into the cache (hits backend only once per session).
   Future<List<Map<String, dynamic>>?> _fetchAllProducts(String token) async {
+    if (useTestingDatabase) {
+      try {
+        final response = await http.get(
+          Uri.parse('$testBaseUrl/products/?query='),
+          headers: {'Content-Type': 'application/json'},
+        ).timeout(const Duration(seconds: 10));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data is List) {
+            return List<Map<String, dynamic>>.from(data);
+          }
+        }
+      } catch (e) {
+        // Fallback to offline / handle exception
+      }
+      return null;
+    }
+
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/products/?query='),
@@ -88,6 +114,25 @@ class ApiService {
   /// - Non-empty    → filters cache locally; falls back to backend only if the
   ///                  cache is empty or the local search returns nothing.
   Future<List<Map<String, dynamic>>?> searchProducts(String query) async {
+    if (useTestingDatabase) {
+      try {
+        final response = await http.get(
+          Uri.parse('$testBaseUrl/products/?query=$query'),
+          headers: {'Content-Type': 'application/json'},
+        ).timeout(const Duration(seconds: 10));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data is List) {
+            return List<Map<String, dynamic>>.from(data);
+          }
+        }
+      } catch (e) {
+        // Fallback to offline / handle exception
+      }
+      return null;
+    }
+
     try {
       final token = await storage.read(key: 'access_token');
       if (token == null) return null;

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/models/notification_model.dart';
+import '../core/constants/api_constants.dart';
 
 class NotificationProvider with ChangeNotifier {
   List<AdminNotification> _notifications = [];
@@ -13,8 +14,6 @@ class NotificationProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   int get unreadCount => _unreadCount;
 
-  static const String baseUrl = 'http://192.168.1.6:8000/api';
-
   Future<void> fetchNotifications() async {
     _isLoading = true;
     notifyListeners();
@@ -24,7 +23,7 @@ class NotificationProvider with ChangeNotifier {
       final token = prefs.getString('access_token');
       
       final response = await http.get(
-        Uri.parse('$baseUrl/admin/notifications/'),
+        Uri.parse('${ApiConstants.baseUrl}/admin/notifications/'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -50,7 +49,7 @@ class NotificationProvider with ChangeNotifier {
       final token = prefs.getString('access_token');
       
       final response = await http.post(
-        Uri.parse('$baseUrl/admin/notifications/$id/mark-read/'),
+        Uri.parse('${ApiConstants.baseUrl}/admin/notifications/$id/mark-read/'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

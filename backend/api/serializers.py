@@ -49,8 +49,20 @@ class UserProfileSerializer(serializers.ModelSerializer):
                   'total_products', 'is_approved', 'is_active']
 
     def get_total_products(self, obj):
-        from .models import Product
-        return Product.objects.count()
+        import os
+        is_mock_mode = os.environ.get('MOCK_DATABASE', 'False').lower() == 'true'
+        if is_mock_mode:
+            return 3
+        try:
+            from .mssql_connection import get_mssql_connection
+            conn = get_mssql_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM ItemMaster")
+            count = cursor.fetchone()[0]
+            conn.close()
+            return count
+        except Exception:
+            return 0
 
     def get_profile_photo_url(self, obj):
         request = self.context.get('request')

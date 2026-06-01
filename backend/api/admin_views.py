@@ -44,7 +44,22 @@ class AdminDashboardView(APIView):
         pending_approvals = UserProfile.objects.filter(
             is_approved=False, user__is_superuser=False
         ).count()
-        total_products = Product.objects.count()
+        # Fetch product count using raw SQL connection since products are on an external db
+        import os
+        is_mock_mode = os.environ.get('MOCK_DATABASE', 'False').lower() == 'true'
+        
+        if is_mock_mode:
+            total_products = 3
+        else:
+            try:
+                from .mssql_connection import get_mssql_connection
+                conn = get_mssql_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM ItemMaster")
+                total_products = cursor.fetchone()[0]
+                conn.close()
+            except Exception:
+                total_products = 0
         # Active sessions = employees who are approved and active
         active_sessions = UserProfile.objects.filter(
             is_approved=True, user__is_active=True, user__is_superuser=False

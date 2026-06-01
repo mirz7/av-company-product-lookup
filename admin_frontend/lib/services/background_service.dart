@@ -6,6 +6,7 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:admin_frontend/core/constants/api_constants.dart';
 
 // Note: Background service runs in a separate isolate. 
 // It doesn't share memory with the main app.
@@ -74,7 +75,7 @@ void onStart(ServiceInstance service) async {
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse('http://192.168.1.6:8000/api/admin/notifications/?is_read=false'),
+        Uri.parse('${ApiConstants.baseUrl}/admin/notifications/?is_read=false'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

@@ -6,33 +6,204 @@ from .models import Product
 from .serializers import ProductSerializer, UserRegistrationSerializer, UserProfileSerializer
 from rest_framework.exceptions import NotFound
 
-class ProductSearchView(generics.ListAPIView):
-    serializer_class = ProductSerializer
+# ── SQL Server product search ─────────────────────────────────────────────────
+# The billing database lives on SQL Server and is accessed exclusively via
+# raw pyodbc queries.  Django's ORM is NOT used for these tables so that we
+# never risk altering the client's existing billing schema.
+from .mssql_connection import get_mssql_connection
+
+
+class ProductSearchView(APIView):
+    """
+    GET /api/products/?query=<barcode_or_product_code>
+
+    Searches the SQL Server billing database using both the product code (PluNo)
+    and the barcode (BarCode) so staff can scan or type either value.
+
+    Response fields (identical to the previous ORM-based response so the
+    Flutter app requires no changes):
+        product_code  – PluNo from ItemMaster
+        name          – ItemName from ItemMaster
+        price         – PriceAmt (user's assigned price level from UserProfile)
+        price_1       – PriceAmt  (standard price)
+        price_2       – CasePrice (discount price)
+        price_3       – UnitPrice (wholesale price)
+        barcode       – BarCode from ItemMasterFinFl (may be null)
+    """
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        query = self.request.query_params.get('query')
-        code = self.request.query_params.get('code')
-        
-        # Support old frontend parameter 'code' for backward compatibility
-        search_term = query if query else code
-        
-        if search_term:
-            from django.db.models import Q
+    # Raw SQL that joins the three billing tables.
+    # Parametrised with ? placeholders (pyodbc style) to prevent SQL injection.
+    _SEARCH_SQL = """
+        SELECT
+            IM.ItemName,
+            IMF.BarCode,
+            IMP.PriceAmt,
+            IMP.CasePrice,
+            IMP.UnitPrice,
+            IM.PluNo
+        FROM ItemMaster IM
+        LEFT JOIN ItemMasterFinFl IMF
+            ON IM.ItmId = IMF.ItmId
+        LEFT JOIN ItemMasterPriceFL IMP
+            ON IM.ItmId = IMP.ItmId
+        WHERE
+            IM.PluNo    = ?
+            OR IMF.BarCode = ?
+    """
+
+    # SQL for returning a sample of products when no query is provided
+    # (mirrors the old behaviour of returning the first 30 products).
+    _BROWSE_SQL = """
+        SELECT TOP 30
+            IM.ItemName,
+            IMF.BarCode,
+            IMP.PriceAmt,
+            IMP.CasePrice,
+            IMP.UnitPrice,
+            IM.PluNo
+        FROM ItemMaster IM
+        LEFT JOIN ItemMasterFinFl IMF
+            ON IM.ItmId = IMF.ItmId
+        LEFT JOIN ItemMasterPriceFL IMP
+            ON IM.ItmId = IMP.ItmId
+    """
+
+    def _get_price_level(self, request):
+        """Return the price level (1/2/3) for the authenticated user."""
+        try:
+            return request.user.profile.price_level
+        except Exception:
+            return 1  # default to standard pricing
+
+    def _row_to_dict(self, row, price_level):
+        """
+        Convert a pyodbc Row to the dict shape expected by the Flutter app.
+
+        price  – resolved to the field that matches the user's price level:
+                   level 1 → PriceAmt   (standard)
+                   level 2 → CasePrice  (discount)
+                   level 3 → UnitPrice  (wholesale)
+        """
+        item_name  = row[0] or ''
+        barcode    = row[1] or ''
+        price_amt  = float(row[2] or 0)
+        case_price = float(row[3] or 0)
+        unit_price = float(row[4] or 0)
+        plu_no     = str(row[5] or '')
+
+        # Resolve the "active" price based on the user's permission level
+        if price_level == 2:
+            active_price = case_price
+        elif price_level == 3:
+            active_price = unit_price
+        else:
+            active_price = price_amt
+
+        return {
+            'product_code': plu_no,
+            'name':         item_name,
+            'barcode':      barcode,
+            'price':        active_price,
+            'price_1':      price_amt,
+            'price_2':      case_price,
+            'price_3':      unit_price,
+        }
+
+    def get(self, request):
+        # Accept both ?query= (new) and ?code= (legacy frontend compatibility)
+        query = (request.query_params.get('query') or request.query_params.get('code', '')).strip()
+        price_level = self._get_price_level(request)
+
+        # Check if mock mode is requested or configured in settings/env
+        import os
+        is_mock_mode = os.environ.get('MOCK_DATABASE', 'False').lower() == 'true'
+
+        if is_mock_mode:
+            # Return high-quality mock product data matching the real structure
+            mock_products = [
+                {
+                    'product_code': '12345',
+                    'name': 'Mock Premium Item A',
+                    'barcode': '8901234567890',
+                    'price_1': 100.0,
+                    'price_2': 90.0,
+                    'price_3': 80.0
+                },
+                {
+                    'product_code': '67890',
+                    'name': 'Mock Premium Item B',
+                    'barcode': '8901234567891',
+                    'price_1': 250.0,
+                    'price_2': 230.0,
+                    'price_3': 200.0
+                },
+                {
+                    'product_code': '11111',
+                    'name': 'Mock Wholesale Item C',
+                    'barcode': '8901234567892',
+                    'price_1': 50.0,
+                    'price_2': 45.0,
+                    'price_3': 40.0
+                }
+            ]
+
+            # Resolve user's active price for the mock products
+            for p in mock_products:
+                if price_level == 2:
+                    p['price'] = p['price_2']
+                elif price_level == 3:
+                    p['price'] = p['price_3']
+                else:
+                    p['price'] = p['price_1']
+
+            if query:
+                # Filter results based on search query (case-insensitive barcode or code match)
+                q_lower = query.lower()
+                filtered = [
+                    p for p in mock_products
+                    if q_lower in p['product_code'].lower() or q_lower in p['barcode'].lower() or q_lower in p['name'].lower()
+                ]
+                return Response(filtered)
             
-            # First, check for an exact match on the product code (e.g. from QR scan)
-            exact_match = Product.objects.filter(product_code__iexact=search_term)
-            if exact_match.exists():
-                return exact_match
-                
-            # Fallback to partial matching for names or partial codes
-            queryset = Product.objects.filter(
-                Q(product_code__icontains=search_term) | Q(name__icontains=search_term)
+            return Response(mock_products)
+
+        try:
+            conn = get_mssql_connection()
+        except RuntimeError as exc:
+            # SQL Server is unreachable — return a clear error so the app can
+            # display an appropriate offline message.
+            return Response(
+                {'error': str(exc), 'detail': 'Billing database unavailable. (To test from home without SQL Server, set MOCK_DATABASE=True in .env)'},
+                status=503
             )
-            return queryset
-        
-        # Return initial products (first 20) when no query is provided
-        return Product.objects.all()[:30]
+
+        try:
+            cursor = conn.cursor()
+
+            if query.strip():
+                # Parametrised search by product code OR barcode
+                cursor.execute(self._SEARCH_SQL, (query, query))
+            else:
+                # No query — return sample browse list (first 30 products)
+                cursor.execute(self._BROWSE_SQL)
+
+            rows = cursor.fetchall()
+            results = [self._row_to_dict(row, price_level) for row in rows]
+            return Response(results)
+
+        except Exception as exc:
+            return Response(
+                {'error': f'Query failed: {str(exc)}'},
+                status=500
+            )
+        finally:
+            # Always close the connection to avoid connection pool exhaustion
+            try:
+                conn.close()
+            except Exception:
+                pass
+
 
 class RegisterUserView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
