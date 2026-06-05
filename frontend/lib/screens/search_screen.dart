@@ -565,7 +565,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
 
     final name = data['name']?.isNotEmpty == true ? data['name'] : data['product_code'] ?? 'Product';
     final code = data['product_code'] ?? '';
-    final price = data['price_1']?.toString() ?? '—';
+    final price = data['price']?.toString() ?? '—';
     // Extended prices moved to detail view
 
     return _maybeAnimate(
@@ -768,7 +768,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('PRICE', style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : AppTheme.lightSubText, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                                Text('PRICE A', style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : AppTheme.lightSubText, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                                 const SizedBox(height: 4),
                                 Text('₹$price', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: const Color(0xFFFF6B6B))),
                               ],

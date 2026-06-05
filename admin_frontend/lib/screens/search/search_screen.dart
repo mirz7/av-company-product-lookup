@@ -265,7 +265,7 @@ class _SearchScreenState extends State<SearchScreen> {
         final isDark = Provider.of<ThemeProvider>(context, listen: false).isDark;
         final name = data['name']?.isNotEmpty == true ? data['name'] : data['product_code'] ?? 'Product';
         final code = data['product_code'] ?? '';
-        final price = data['price']?.toString() ?? '—';
+        final price = data['price_1']?.toString() ?? '—';
         final priceB = data['price_2']?.toString() ?? '—';
         final priceC = data['price_3']?.toString() ?? '—';
         
@@ -313,7 +313,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         const SizedBox(height: 36),
                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.end, children: [
                           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text('PRICE', style: TextStyle(fontSize: 12, color: subTextColor, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                            Text('PRICE A', style: TextStyle(fontSize: 12, color: subTextColor, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                             const SizedBox(height: 4),
                             Text('₹$price', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: AppTheme.primaryGlow)),
                           ]),

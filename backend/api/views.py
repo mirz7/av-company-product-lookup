@@ -44,9 +44,9 @@ class ProductSearchView(APIView):
                     price = price_1
                     
                 results.append({
-                    'product_code': row.get('product code') or '',
-                    'name': row.get('product name') or '',
-                    'price_label': row.get('price label') or '',
+                    'product_code': str(row.get('product code')) if row.get('product code') is not None else '',
+                    'name': str(row.get('product name')) if row.get('product name') is not None else '',
+                    'price_label': str(row.get('price label')) if row.get('price label') is not None else '',
                     'price_1': price_1,
                     'price_2': price_2,
                     'price_3': price_3,
