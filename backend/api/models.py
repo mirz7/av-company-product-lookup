@@ -71,21 +71,6 @@ def save_user_profile(sender, instance, **kwargs):
     except UserProfile.DoesNotExist:
         pass
 
-class Product(models.Model):
-    product_code = models.CharField(max_length=100, unique=True, db_column='item_code')
-    name = models.CharField(max_length=200, blank=True, default='', db_column='item_name')
-    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Cost Price", db_column='cost_price')
-    price_1 = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price 1", db_column='price_a')
-    price_2 = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price 2", db_column='price_b')
-    price_3 = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price 3", db_column='price_c')
-
-    class Meta:
-        db_table = 'products'
-        managed = False
-
-    def __str__(self):
-        return f"{self.name or self.product_code}"
-
 
 class ActivityLog(models.Model):
     ACTIVITY_TYPES = [

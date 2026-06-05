@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
 from django.utils import timezone
-from .models import Product, UserProfile, ActivityLog, AdminNotification
+from .models import UserProfile, ActivityLog, AdminNotification
 from .serializers import AdminEmployeeSerializer, AdminNotificationSerializer
 
 
@@ -44,7 +44,6 @@ class AdminDashboardView(APIView):
         pending_approvals = UserProfile.objects.filter(
             is_approved=False, user__is_superuser=False
         ).count()
-        total_products = Product.objects.count()
         # Active sessions = employees who are approved and active
         active_sessions = UserProfile.objects.filter(
             is_approved=True, user__is_active=True, user__is_superuser=False
@@ -66,7 +65,6 @@ class AdminDashboardView(APIView):
         return Response({
             'total_employees': total_employees,
             'pending_approvals': pending_approvals,
-            'total_products': total_products,
             'active_sessions': active_sessions,
             'recent_activity': recent_activity,
         })

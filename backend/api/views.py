@@ -2,37 +2,10 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Product
-from .serializers import ProductSerializer, UserRegistrationSerializer, UserProfileSerializer
+from .serializers import UserRegistrationSerializer, UserProfileSerializer
 from rest_framework.exceptions import NotFound
 
-class ProductSearchView(generics.ListAPIView):
-    serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        query = self.request.query_params.get('query')
-        code = self.request.query_params.get('code')
-        
-        # Support old frontend parameter 'code' for backward compatibility
-        search_term = query if query else code
-        
-        if search_term:
-            from django.db.models import Q
-            
-            # First, check for an exact match on the product code (e.g. from QR scan)
-            exact_match = Product.objects.filter(product_code__iexact=search_term)
-            if exact_match.exists():
-                return exact_match
-                
-            # Fallback to partial matching for names or partial codes
-            queryset = Product.objects.filter(
-                Q(product_code__icontains=search_term) | Q(name__icontains=search_term)
-            )
-            return queryset
-        
-        # Return initial products (first 20) when no query is provided
-        return Product.objects.all()[:30]
 
 class RegisterUserView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer

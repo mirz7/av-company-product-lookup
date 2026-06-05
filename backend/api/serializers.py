@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, AdminNotification
+from .models import AdminNotification
 
 class AdminNotificationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -7,27 +7,7 @@ class AdminNotificationSerializer(serializers.ModelSerializer):
         fields = ['id', 'notification_type', 'title', 'message', 'timestamp', 'is_read', 'related_user']
 
 
-class ProductSerializer(serializers.ModelSerializer):
-    price = serializers.SerializerMethodField()
 
-    class Meta:
-        model = Product
-        fields = ['product_code', 'name', 'price', 'price_1', 'price_2', 'price_3']
-
-    def get_price(self, obj):
-        request = self.context.get('request')
-        if request and hasattr(request, 'user'):
-            try:
-                level = request.user.profile.price_level
-                if level == 1:
-                    return obj.price_1
-                elif level == 2:
-                    return obj.price_2
-                elif level == 3:
-                    return obj.price_3
-            except Exception:
-                pass
-        return obj.price_1
 
 from django.contrib.auth.models import User
 from .models import UserProfile
@@ -37,7 +17,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(source='user.last_name', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.CharField(source='user.email', read_only=True)
-    total_products = serializers.SerializerMethodField()
     is_approved = serializers.BooleanField(read_only=True)
     profile_photo_url = serializers.SerializerMethodField()
 
@@ -46,11 +25,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ['username', 'first_name', 'last_name', 'email', 'role',
                   'phone_number', 'profile_photo', 'profile_photo_url',
                   'price_level', 'searches_today', 'hours_logged',
-                  'total_products', 'is_approved', 'is_active']
-
-    def get_total_products(self, obj):
-        from .models import Product
-        return Product.objects.count()
+                  'is_approved', 'is_active']
 
     def get_profile_photo_url(self, obj):
         request = self.context.get('request')
