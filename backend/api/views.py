@@ -4,6 +4,62 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import UserRegistrationSerializer, UserProfileSerializer
 from rest_framework.exceptions import NotFound
+from .mssql_client import search_products
+
+
+class ProductSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        query = request.query_params.get('query')
+        code = request.query_params.get('code')
+        
+        search_term = query if query is not None else code
+        if search_term:
+            search_term = search_term.strip()
+            
+        try:
+            raw_results = search_products(search_term)
+            
+            price_level = 1
+            try:
+                price_level = request.user.profile.price_level
+            except Exception:
+                pass
+                
+            results = []
+            for row in raw_results:
+                price_1 = float(row.get('price a') or 0.0)
+                price_2 = float(row.get('price b') or 0.0)
+                price_3 = float(row.get('price c') or 0.0)
+                
+                # Determine active price based on user level
+                if price_level == 1:
+                    price = price_1
+                elif price_level == 2:
+                    price = price_2
+                elif price_level == 3:
+                    price = price_3
+                else:
+                    price = price_1
+                    
+                results.append({
+                    'product_code': row.get('product code') or '',
+                    'name': row.get('product name') or '',
+                    'price_label': row.get('price label') or '',
+                    'price_1': price_1,
+                    'price_2': price_2,
+                    'price_3': price_3,
+                    'price': price,
+                })
+                
+            return Response(results)
+        except Exception as e:
+            return Response(
+                {'error': f"Failed to retrieve products from external database: {str(e)}"},
+                status=503
+            )
+
 
 
 

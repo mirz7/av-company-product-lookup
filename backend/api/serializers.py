@@ -11,6 +11,7 @@ class AdminNotificationSerializer(serializers.ModelSerializer):
 
 from django.contrib.auth.models import User
 from .models import UserProfile
+from .mssql_client import get_total_products_count
 
 class UserProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name', read_only=True)
@@ -19,19 +20,24 @@ class UserProfileSerializer(serializers.ModelSerializer):
     email = serializers.CharField(source='user.email', read_only=True)
     is_approved = serializers.BooleanField(read_only=True)
     profile_photo_url = serializers.SerializerMethodField()
+    total_products = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
         fields = ['username', 'first_name', 'last_name', 'email', 'role',
                   'phone_number', 'profile_photo', 'profile_photo_url',
                   'price_level', 'searches_today', 'hours_logged',
-                  'is_approved', 'is_active']
+                  'total_products', 'is_approved', 'is_active']
 
     def get_profile_photo_url(self, obj):
         request = self.context.get('request')
         if obj.profile_photo and request:
             return request.build_absolute_uri(obj.profile_photo.url)
         return None
+
+    def get_total_products(self, obj):
+        return get_total_products_count()
+
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):

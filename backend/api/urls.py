@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    RegisterUserView, UserProfileView, IncrementSearchView,
+    ProductSearchView, RegisterUserView, UserProfileView, IncrementSearchView,
     AdminSetupCheckView, AdminSetupView, ForgotPasswordView, ResetPasswordView
 )
 from .admin_views import (
@@ -29,6 +29,10 @@ urlpatterns = [
     # User profile (staff app)
     path('profile/', UserProfileView.as_view(), name='profile'),
     path('profile/increment-search/', IncrementSearchView.as_view(), name='increment_search'),
+
+    # Products
+    path('products/', ProductSearchView.as_view(), name='product_search'),
+
 
 
 
