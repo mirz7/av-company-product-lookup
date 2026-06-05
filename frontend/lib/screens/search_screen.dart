@@ -565,7 +565,7 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
 
     final name = data['name']?.isNotEmpty == true ? data['name'] : data['product_code'] ?? 'Product';
     final code = data['product_code'] ?? '';
-    final price = data['price']?.toString() ?? '—';
+    final price = data['price_1']?.toString() ?? '—';
     // Extended prices moved to detail view
 
     return _maybeAnimate(

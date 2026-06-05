@@ -210,7 +210,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _card(Map<String, dynamic> d, Color textColor, Color sub, Color card, Color border, bool isDark, bool isResult, int delay) {
     final name = d['name']?.isNotEmpty == true ? d['name'] : d['product_code'] ?? 'Product';
     final code = d['product_code'] ?? '';
-    final price = d['price']?.toString() ?? '—';
+    final price = d['price_1']?.toString() ?? '—';
     final pA = d['price_1']?.toString() ?? '—';
     final pB = d['price_2']?.toString() ?? '—';
     final pC = d['price_3']?.toString() ?? '—';
