@@ -7,6 +7,9 @@ import '../../core/theme/app_theme.dart';
 import '../../core/constants/route_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../data/services/auth_service.dart';
+import 'package:file_picker/file_picker.dart';
+import '../../data/services/product_service.dart';
+import '../../providers/dashboard_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -198,6 +201,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _tile(Icons.manage_accounts_outlined, 'Edit Profile Details', card, border, textColor, sub, isDark, () => _editProfile(context, admin, isDark)),
             const SizedBox(height: 8),
             _tile(Icons.lock_reset, 'Change Password', card, border, textColor, sub, isDark, () => _changePassword(context, isDark)),
+            const SizedBox(height: 20),
+            Align(alignment: Alignment.centerLeft, child: Row(children: [
+              Container(width: 3, height: 14, decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(width: 10),
+              Text('INVENTORY MANAGEMENT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: sub, letterSpacing: 1.5)),
+            ])),
+            const SizedBox(height: 12),
+            _tile(Icons.table_chart_outlined, 'Upload Inventory Spreadsheet', card, border, textColor, sub, isDark, () => _showUploadInventoryDialog(context, isDark)),
             const SizedBox(height: 8),
 
             // Theme toggle
@@ -244,7 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 24),
             Align(alignment: Alignment.centerLeft, child: Row(children: [
-              Container(width: 3, height: 14, decoration: BoxDecoration(color: AppTheme.accent, borderRadius: BorderRadius.circular(2))),
+              Container(width: 3, height: 14, decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(2))),
               const SizedBox(width: 10),
               Text('SYSTEM & HEALTH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: sub, letterSpacing: 1.5)),
             ])),
@@ -266,7 +277,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ]),
                 const SizedBox(height: 12),
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Row(children: [const Icon(Icons.speed_rounded, color: AppTheme.accent, size: 18), const SizedBox(width: 14), Text('Server Ping', style: TextStyle(fontSize: 13, color: textColor))]),
+                  Row(children: [const Icon(Icons.speed_rounded, color: AppTheme.primary, size: 18), const SizedBox(width: 14), Text('Server Ping', style: TextStyle(fontSize: 13, color: textColor))]),
                   Text(_ping, style: TextStyle(fontSize: 11, color: sub)),
                 ]),
               ]),
@@ -466,4 +477,317 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ))),
       ),
     );
+
+  Future<void> _showUploadInventoryDialog(BuildContext context, bool isDark) async {
+    final ProductService svc = ProductService();
+    String uploadMode = 'upsert'; // 'upsert' or 'replace'
+    bool uploading = false;
+    String? err;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setModalState) {
+        final textColor = isDark ? Colors.white : AppTheme.lightText;
+        final subColor = isDark ? Colors.white70 : AppTheme.lightSubText;
+        final borderColor = isDark ? Colors.white.withOpacity(0.1) : AppTheme.lightBorder;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E2E).withOpacity(0.98) : Colors.white.withOpacity(0.98),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            border: Border.all(color: borderColor),
+          ),
+          padding: EdgeInsets.only(left: 28, right: 28, top: 24, bottom: MediaQuery.of(ctx).viewInsets.bottom + 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: isDark ? Colors.white24 : Colors.black12, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 24),
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  child: const Icon(Icons.table_chart_outlined, color: AppTheme.primary, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Text('Import Excel File', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textColor, letterSpacing: -0.5)),
+              ]),
+              if (err != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: AppTheme.danger.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  child: Text(err!, style: const TextStyle(color: AppTheme.danger, fontSize: 13, fontWeight: FontWeight.w600)),
+                )
+              ],
+              const SizedBox(height: 24),
+              Text('IMPORT MODE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: subColor, letterSpacing: 1.0)),
+              const SizedBox(height: 12),
+              
+              // Upsert mode option
+              InkWell(
+                onTap: () => setModalState(() => uploadMode = 'upsert'),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: uploadMode == 'upsert' ? AppTheme.primary.withOpacity(0.08) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: uploadMode == 'upsert' ? AppTheme.primary : borderColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.update_rounded, color: uploadMode == 'upsert' ? AppTheme.primary : subColor),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Update & Add Products', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                            const SizedBox(height: 2),
+                            Text('Updates prices/names for existing products, and appends new products.', style: TextStyle(color: subColor, fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      Radio<String>(
+                        value: 'upsert',
+                        groupValue: uploadMode,
+                        activeColor: AppTheme.primary,
+                        onChanged: (v) => setModalState(() => uploadMode = v!),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // Replace mode option
+              InkWell(
+                onTap: () => setModalState(() => uploadMode = 'replace'),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: uploadMode == 'replace' ? AppTheme.danger.withOpacity(0.08) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: uploadMode == 'replace' ? AppTheme.danger : borderColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_sweep_outlined, color: uploadMode == 'replace' ? AppTheme.danger : subColor),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Replace Product Table', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                            const SizedBox(height: 2),
+                            Text('Clears the existing inventory database and does a fresh import.', style: TextStyle(color: subColor, fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      Radio<String>(
+                        value: 'replace',
+                        groupValue: uploadMode,
+                        activeColor: AppTheme.danger,
+                        onChanged: (v) => setModalState(() => uploadMode = v!),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              
+              // Action button to trigger upload
+              GestureDetector(
+                onTap: uploading ? null : () async {
+                  setModalState(() { uploading = true; err = null; });
+                  try {
+                    final result = await FilePicker.pickFiles(
+                      type: FileType.custom,
+                      allowedExtensions: ['xlsx', 'xls', 'csv'],
+                      withData: true,
+                    );
+
+                    if (result == null || result.files.isEmpty) {
+                      setModalState(() { uploading = false; });
+                      return;
+                    }
+
+                    final file = result.files.first;
+                    final response = await svc.uploadInventory(file, mode: uploadMode);
+
+                    if (response['success'] == true) {
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      if (context.mounted) {
+                        Provider.of<DashboardProvider>(context, listen: false).fetchMetrics();
+                        final created = response['created'] ?? 0;
+                        final updated = response['updated'] ?? 0;
+                        final total = created + updated;
+                        showDialog(
+                          context: context,
+                          builder: (dCtx) => Dialog(
+                            backgroundColor: Colors.transparent,
+                            child: Container(
+                              padding: const EdgeInsets.all(28),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF1E0A08).withOpacity(0.97) : Colors.white,
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+                                boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.15), blurRadius: 24, offset: const Offset(0, 8))],
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 64, height: 64,
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.35), blurRadius: 20)],
+                                    ),
+                                    child: const Icon(Icons.check_rounded, color: Colors.white, size: 32),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Text('Import Complete!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: textColor, letterSpacing: -0.3)),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    uploadMode == 'replace' ? 'Database replaced & re-imported' : 'Database updated successfully',
+                                    style: TextStyle(fontSize: 13, color: subColor),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primary.withOpacity(0.08),
+                                            borderRadius: BorderRadius.circular(14),
+                                            border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+                                          ),
+                                          child: Column(
+                                            children: [
+                                              Text('$created', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppTheme.primaryGlow)),
+                                              const SizedBox(height: 4),
+                                              const Text('New', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.primaryGlow)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.warning.withOpacity(0.08),
+                                            borderRadius: BorderRadius.circular(14),
+                                            border: Border.all(color: AppTheme.warning.withOpacity(0.2)),
+                                          ),
+                                          child: Column(
+                                            children: [
+                                              Text('$updated', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppTheme.warning)),
+                                              const SizedBox(height: 4),
+                                              const Text('Updated', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.warning)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primary.withOpacity(0.08),
+                                            borderRadius: BorderRadius.circular(14),
+                                            border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+                                          ),
+                                          child: Column(
+                                            children: [
+                                              Text('$total', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppTheme.primaryGlow)),
+                                              const SizedBox(height: 4),
+                                              const Text('Total', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.primaryGlow)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  GestureDetector(
+                                    onTap: () => Navigator.pop(dCtx),
+                                    child: Container(
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]),
+                                        borderRadius: BorderRadius.circular(14),
+                                        boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                                      ),
+                                      child: const Center(child: Text('Done', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15))),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                    } else {
+                      setModalState(() {
+                        uploading = false;
+                        err = response['error'] ?? 'Failed to upload inventory.';
+                      });
+                    }
+                  } catch (e) {
+                    setModalState(() {
+                      uploading = false;
+                      err = 'Error picking/uploading file: $e';
+                    });
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: uploadMode == 'upsert'
+                          ? [AppTheme.primary, AppTheme.primaryLight]
+                          : [AppTheme.danger, AppTheme.danger.withOpacity(0.8)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (uploadMode == 'upsert' ? AppTheme.primary : AppTheme.danger).withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
+                  ),
+                  child: Center(
+                    child: uploading
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.file_upload_outlined, color: Colors.white, size: 20),
+                              const SizedBox(width: 10),
+                              Text(
+                                uploadMode == 'replace' ? 'Replace & Import Excel' : 'Select & Import Excel',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
 }

@@ -104,7 +104,7 @@ class AdminApp extends StatelessWidget {
       useMaterial3: true, brightness: Brightness.dark,
       colorScheme: const ColorScheme.dark(
         primary: AppTheme.primary,
-        secondary: AppTheme.accent,
+        secondary: AppTheme.primary,
         surface: AppTheme.darkSurface,
         onPrimary: Colors.white,
         onSurface: Colors.white,
@@ -116,7 +116,7 @@ class AdminApp extends StatelessWidget {
       useMaterial3: true, brightness: Brightness.light,
       colorScheme: const ColorScheme.light(
         primary: AppTheme.primary,
-        secondary: AppTheme.accent,
+        secondary: AppTheme.primary,
         surface: AppTheme.lightSurface,
         onPrimary: Colors.white,
         onSurface: AppTheme.lightText,

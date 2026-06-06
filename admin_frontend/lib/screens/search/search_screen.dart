@@ -5,6 +5,8 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/services/product_service.dart';
+import 'package:file_picker/file_picker.dart';
+import '../../providers/dashboard_provider.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -34,6 +36,197 @@ class _SearchScreenState extends State<SearchScreen> {
         if (q.isEmpty) _total = d?.length ?? 0; 
         else if (d == null || d.isEmpty) _error = 'No products matched "$q".'; 
       });
+    }
+  }
+
+  Future<void> _pickAndUploadCSV() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv', 'xlsx', 'xls'],
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => Center(
+          child: Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            color: Theme.of(context).cardColor,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: AppTheme.primary),
+                  SizedBox(height: 16),
+                  Text(
+                    'Processing Excel file...',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final response = await _svc.uploadCSV(file);
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading dialog
+
+      if (response['success'] == true) {
+        _load('');
+        Provider.of<DashboardProvider>(context, listen: false).fetchMetrics();
+        // Show detailed result dialog
+        final created = response['created'] ?? 0;
+        final updated = response['updated'] ?? 0;
+        final total = created + updated;
+        if (!mounted) return;
+        final isDark = Provider.of<ThemeProvider>(context, listen: false).isDark;
+        showDialog(
+          context: context,
+          builder: (ctx) => Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1E1010).withOpacity(0.97)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+                boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.15), blurRadius: 24, offset: const Offset(0, 8))],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 64, height: 64,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]),
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.35), blurRadius: 20)],
+                    ),
+                    child: const Icon(Icons.check_rounded, color: Colors.white, size: 32),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('Import Complete!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppTheme.primaryGlow, letterSpacing: -0.3)),
+                  const SizedBox(height: 8),
+                  Text('Database updated successfully', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+                          ),
+                          child: Column(
+                            children: [
+                              Text('$created', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppTheme.primaryGlow)),
+                              const SizedBox(height: 4),
+                              const Text('New', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.primaryGlow)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.warning.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppTheme.warning.withOpacity(0.2)),
+                          ),
+                          child: Column(
+                            children: [
+                              Text('$updated', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppTheme.warning)),
+                              const SizedBox(height: 4),
+                              const Text('Updated', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.warning)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+                          ),
+                          child: Column(
+                            children: [
+                              Text('$total', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppTheme.primaryGlow)),
+                              const SizedBox(height: 4),
+                              const Text('Total', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.primaryGlow)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                      ),
+                      child: const Center(child: Text('Done', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15))),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      } else {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.error_outline, color: AppTheme.danger),
+                SizedBox(width: 10),
+                Text('Import Failed'),
+              ],
+            ),
+            content: Text(response['error'] ?? 'Unknown error occurred.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppTheme.danger,
+          ),
+        );
+      }
     }
   }
 
@@ -87,14 +280,43 @@ class _SearchScreenState extends State<SearchScreen> {
                 Text('Product Search', style: TextStyle(fontSize: 11, color: sub, letterSpacing: 0.5)),
               ]),
             ]),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.primary.withOpacity(0.3))),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.search_rounded, color: AppTheme.primaryGlow, size: 14),
-                const SizedBox(width: 6),
-                Text('SEARCH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryGlow, letterSpacing: 1.5)),
-              ]),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _pickAndUploadCSV,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppTheme.primary.withOpacity(0.35)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.cloud_upload_outlined, color: AppTheme.primaryGlow, size: 14),
+                          const SizedBox(width: 6),
+                          Text('UPLOAD EXCEL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryGlow, letterSpacing: 1.0)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.primary.withOpacity(0.3))),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.search_rounded, color: AppTheme.primaryGlow, size: 14),
+                    const SizedBox(width: 6),
+                    Text('SEARCH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryGlow, letterSpacing: 1.5)),
+                  ]),
+                ),
+              ],
             ),
           ])).animate().fadeIn(delay: 100.ms),
 
@@ -211,9 +433,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final name = d['name']?.isNotEmpty == true ? d['name'] : d['product_code'] ?? 'Product';
     final code = d['product_code'] ?? '';
     final price = d['price_1']?.toString() ?? '—';
-    final pA = d['price_1']?.toString() ?? '—';
-    final pB = d['price_2']?.toString() ?? '—';
-    final pC = d['price_3']?.toString() ?? '—';
+
 
     return Material(
       color: Colors.transparent,
@@ -359,9 +579,5 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _pi(String label, String val, Color textColor, Color sub, {CrossAxisAlignment align = CrossAxisAlignment.start}) => Column(crossAxisAlignment: align, children: [
-    Text(label.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: sub, letterSpacing: 1.0)),
-    const SizedBox(height: 2),
-    Text('₹$val', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textColor)),
-  ]);
+
 }

@@ -106,3 +106,20 @@ class FCMToken(models.Model):
 
     class Meta:
         db_table = 'av_portal_fcm_token'
+
+
+class Product(models.Model):
+    product_code = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=255)
+    price_label = models.CharField(max_length=100, blank=True, null=True)
+    price_1 = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
+    price_2 = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
+    price_3 = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.product_code} - {self.name}"
+
+    class Meta:
+        db_table = 'av_portal_product'

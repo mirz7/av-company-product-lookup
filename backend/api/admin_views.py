@@ -49,6 +49,12 @@ class AdminDashboardView(APIView):
             is_approved=True, user__is_active=True, user__is_superuser=False
         ).count()
 
+        # Total products count
+        from .models import Product
+        from .mssql_client import get_total_products_count
+        local_count = Product.objects.count()
+        total_products = local_count if local_count > 0 else get_total_products_count()
+
         # Latest 10 activity entries
         logs = ActivityLog.objects.order_by('-created_at')[:10]
         recent_activity = [
@@ -66,6 +72,7 @@ class AdminDashboardView(APIView):
             'total_employees': total_employees,
             'pending_approvals': pending_approvals,
             'active_sessions': active_sessions,
+            'total_products': total_products,
             'recent_activity': recent_activity,
         })
 
@@ -288,3 +295,197 @@ class AdminHealthView(APIView):
             'db_status': db_status,
             'ping': f"{ping}ms"
         })
+
+
+class AdminUploadInventoryView(APIView):
+    """
+    Allows admins to upload a CSV or Excel (.XLSX) file of products.
+    Supports either replacing the entire database or performing an upsert (add/update).
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request):
+        import csv
+        import io
+        import openpyxl
+        from django.db import transaction
+        from .models import Product, ActivityLog
+
+        if 'file' not in request.FILES:
+            return Response({'error': 'No file uploaded. Please upload a file under the key "file".'}, status=400)
+
+        uploaded_file = request.FILES['file']
+        filename = uploaded_file.name.lower()
+        
+        mode = request.data.get('mode', 'upsert')  # 'upsert' or 'replace'
+        if mode not in ['upsert', 'replace']:
+            mode = 'upsert'
+
+        # Read raw bytes
+        file_bytes = uploaded_file.read()
+        rows_data = []
+        headers = []
+
+        if filename.endswith('.csv') or filename.endswith('.tsv') or filename.endswith('.txt'):
+            try:
+                file_data = file_bytes.decode('utf-8-sig')  # UTF-8 BOM
+            except UnicodeDecodeError:
+                try:
+                    file_data = file_bytes.decode('latin-1')
+                except Exception as e:
+                    return Response({'error': f'Failed to decode CSV encoding: {str(e)}'}, status=400)
+
+            # Auto-detect delimiter
+            delimiter = ','
+            first_line = file_data.split('\n')[0] if file_data else ''
+            if '\t' in first_line and first_line.count('\t') > first_line.count(','):
+                delimiter = '\t'
+            elif ';' in first_line and first_line.count(';') > first_line.count(','):
+                delimiter = ';'
+
+            reader = csv.reader(io.StringIO(file_data), delimiter=delimiter)
+            try:
+                headers = [h.strip().lower() for h in next(reader, [])]
+            except StopIteration:
+                return Response({'error': 'CSV file is empty.'}, status=400)
+                
+            for row in reader:
+                if row and any(cell.strip() != '' for cell in row):
+                    rows_data.append(row)
+                    
+        elif filename.endswith('.xlsx'):
+            try:
+                wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
+                sheet = wb.active
+                # Read all rows as lists of values
+                excel_rows = list(sheet.iter_rows(values_only=True))
+                if not excel_rows:
+                    return Response({'error': 'Excel sheet is empty.'}, status=400)
+                
+                # First row is headers
+                raw_headers = excel_rows[0]
+                for h in raw_headers:
+                    if h is not None:
+                        headers.append(str(h).strip().lower())
+                    else:
+                        headers.append('')
+                
+                # Rest are rows
+                for row in excel_rows[1:]:
+                    if row and any(cell is not None and str(cell).strip() != '' for cell in row):
+                        rows_data.append([str(cell) if cell is not None else '' for cell in row])
+            except Exception as e:
+                return Response({'error': f'Failed to parse Excel file: {str(e)}'}, status=400)
+        else:
+            return Response({'error': 'Invalid file format. Only CSV, TSV, and Excel (.XLSX) files are supported.'}, status=400)
+
+        if not headers or all(h == '' for h in headers):
+            return Response({'error': 'File is empty or missing headers.'}, status=400)
+
+        # Flexibility mappings for headers
+        code_idx, name_idx, label_idx, price1_idx, price2_idx, price3_idx = None, None, None, None, None, None
+        
+        for idx, h in enumerate(headers):
+            if h in ['product code', 'product_code', 'code', 'pluno', 'item code', 'item_code', 'id']:
+                code_idx = idx
+            elif h in ['product name', 'product_name', 'name', 'itemname', 'description', 'item_name', 'item name']:
+                name_idx = idx
+            elif h in ['price label', 'price_label', 'label', 'description_price']:
+                label_idx = idx
+            elif h in ['price a', 'price_a', 'price 1', 'price_1', 'unitprice', 'unit_price', 'price', 'a']:
+                price1_idx = idx
+            elif h in ['price b', 'price_b', 'price 2', 'price_2', 'priceamt', 'price_amt', 'b']:
+                price2_idx = idx
+            elif h in ['price c', 'price_c', 'price 3', 'price_3', 'changeamount', 'change_amount', 'c']:
+                price3_idx = idx
+
+        # Validation
+        if code_idx is None:
+            return Response({'error': 'File must contain a "product code" or "code" column.'}, status=400)
+        if name_idx is None:
+            return Response({'error': 'File must contain a "product name" or "name" column.'}, status=400)
+
+        def parse_price(val):
+            if not val:
+                return 0.0
+            clean_val = str(val).replace('$', '').replace('₹', '').replace(',', '').strip()
+            try:
+                return float(clean_val)
+            except ValueError:
+                return 0.0
+
+        created_count = 0
+        updated_count = 0
+        
+        try:
+            with transaction.atomic():
+                if mode == 'replace':
+                    # Clear all products first
+                    Product.objects.all().delete()
+                    
+                # Load existing products into memory for fast lookup
+                existing_products = {p.product_code: p for p in Product.objects.all()}
+                
+                products_to_create = []
+                seen_codes = set()
+                
+                for row in rows_data:
+                    # Pad row if columns are missing
+                    while len(row) < len(headers):
+                        row.append('')
+
+                    code = row[code_idx].strip()
+                    name = row[name_idx].strip()
+
+                    if not code or not name:
+                        continue
+
+                    # Deduplicate within the uploaded file
+                    if code in seen_codes:
+                        continue
+                    seen_codes.add(code)
+
+                    label = row[label_idx].strip() if label_idx is not None else ''
+                    p1 = parse_price(row[price1_idx]) if price1_idx is not None else 0.0
+                    p2 = parse_price(row[price2_idx]) if price2_idx is not None else 0.0
+                    p3 = parse_price(row[price3_idx]) if price3_idx is not None else 0.0
+
+                    if code in existing_products:
+                        # Update existing product
+                        product = existing_products[code]
+                        product.name = name
+                        product.price_label = label
+                        product.price_1 = p1
+                        product.price_2 = p2
+                        product.price_3 = p3
+                        product.save()
+                        updated_count += 1
+                    else:
+                        # Schedule creation
+                        products_to_create.append(Product(
+                            product_code=code,
+                            name=name,
+                            price_label=label,
+                            price_1=p1,
+                            price_2=p2,
+                            price_3=p3
+                        ))
+                        created_count += 1
+
+                # Bulk create new products
+                if products_to_create:
+                    Product.objects.bulk_create(products_to_create)
+
+                # Log activity
+                ActivityLog.objects.create(
+                    activity_type='inventory_audit',
+                    title='Products Uploaded',
+                    subtitle=f'Mode: {mode.upper()}. Created {created_count}, updated {updated_count} products.'
+                )
+
+            return Response({
+                'message': f'Successfully updated database. Created: {created_count}, Updated: {updated_count}.'
+            }, status=200)
+
+        except Exception as e:
+            return Response({'error': f'Failed to process file: {str(e)}'}, status=500)

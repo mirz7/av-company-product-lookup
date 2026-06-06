@@ -36,6 +36,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return None
 
     def get_total_products(self, obj):
+        from .models import Product
+        local_count = Product.objects.count()
+        if local_count > 0:
+            return local_count
         return get_total_products_count()
 
 

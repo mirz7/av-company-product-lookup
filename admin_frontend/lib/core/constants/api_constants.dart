@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 class ApiConstants {
   static const String baseUrl =
-      kIsWeb ? 'http://127.0.0.1:8000/api' : 'http://192.168.1.6:8000/api';
+      kIsWeb ? 'http://127.0.0.1:8000/api' : 'http://192.168.0.108:8000/api';
   static const String login = '$baseUrl/token/';
   static const String authMe = '$baseUrl/auth/me/';
   static const String dashboard = '$baseUrl/admin/dashboard/';

@@ -1,2 +1,3 @@
 Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run """C:\Users\mirzd\av_company\backend\venv\Scripts\pythonw.exe"" ""C:\Users\mirzd\av_company\backend\serve.py""", 0, False
+strPath = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
+WshShell.Run """" & strPath & "\venv\Scripts\pythonw.exe"" """ & strPath & "\serve.py""", 0, False

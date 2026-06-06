@@ -19,44 +19,85 @@ class ProductSearchView(APIView):
             search_term = search_term.strip()
             
         try:
-            raw_results = search_products(search_term)
-            
+            from django.db.models import Q
+            from .models import Product
+
             price_level = 1
             try:
                 price_level = request.user.profile.price_level
             except Exception:
                 pass
-                
-            results = []
-            for row in raw_results:
-                price_1 = float(row.get('price a') or 0.0)
-                price_2 = float(row.get('price b') or 0.0)
-                price_3 = float(row.get('price c') or 0.0)
-                
-                # Determine active price based on user level
-                if price_level == 1:
-                    price = price_1
-                elif price_level == 2:
-                    price = price_2
-                elif price_level == 3:
-                    price = price_3
+
+            # Check if we have local products uploaded
+            if Product.objects.exists():
+                if search_term:
+                    # Filter local products
+                    db_results = Product.objects.filter(
+                        Q(product_code__iexact=search_term) |
+                        Q(product_code__icontains=search_term) |
+                        Q(name__icontains=search_term)
+                    )[:100]
                 else:
-                    price = price_1
+                    # Return top 30
+                    db_results = Product.objects.all()[:30]
+
+                results = []
+                for p in db_results:
+                    price_1 = float(p.price_1)
+                    price_2 = float(p.price_2)
+                    price_3 = float(p.price_3)
+
+                    if price_level == 1:
+                        price = price_1
+                    elif price_level == 2:
+                        price = price_2
+                    elif price_level == 3:
+                        price = price_3
+                    else:
+                        price = price_1
+
+                    results.append({
+                        'product_code': p.product_code,
+                        'name': p.name,
+                        'price_label': p.price_label or '',
+                        'price_1': price_1,
+                        'price_2': price_2,
+                        'price_3': price_3,
+                        'price': price,
+                    })
+            else:
+                # Fallback to external MSSQL database
+                raw_results = search_products(search_term)
+                
+                results = []
+                for row in raw_results:
+                    price_1 = float(row.get('price a') or 0.0)
+                    price_2 = float(row.get('price b') or 0.0)
+                    price_3 = float(row.get('price c') or 0.0)
                     
-                results.append({
-                    'product_code': str(row.get('product code')) if row.get('product code') is not None else '',
-                    'name': str(row.get('product name')) if row.get('product name') is not None else '',
-                    'price_label': str(row.get('price label')) if row.get('price label') is not None else '',
-                    'price_1': price_1,
-                    'price_2': price_2,
-                    'price_3': price_3,
-                    'price': price,
-                })
+                    if price_level == 1:
+                        price = price_1
+                    elif price_level == 2:
+                        price = price_2
+                    elif price_level == 3:
+                        price = price_3
+                    else:
+                        price = price_1
+                        
+                    results.append({
+                        'product_code': str(row.get('product code')) if row.get('product code') is not None else '',
+                        'name': str(row.get('product name')) if row.get('product name') is not None else '',
+                        'price_label': str(row.get('price label')) if row.get('price label') is not None else '',
+                        'price_1': price_1,
+                        'price_2': price_2,
+                        'price_3': price_3,
+                        'price': price,
+                    })
                 
             return Response(results)
         except Exception as e:
             return Response(
-                {'error': f"Failed to retrieve products from external database: {str(e)}"},
+                {'error': f"Failed to retrieve products: {str(e)}"},
                 status=503
             )
 
