@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/admin_model.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/network/api_client.dart';
 
 class AuthService {
   Future<AdminModel> login(String username, String password) async {
@@ -14,13 +15,14 @@ class AuthService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final token = data['access'] ?? data['token'] ?? '';
+      final refreshToken = data['refresh'] ?? '';
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('access_token', token);
+      if (refreshToken.isNotEmpty) {
+        await prefs.setString('refresh_token', refreshToken);
+      }
       try {
-        final userResp = await http.get(
-          Uri.parse(ApiConstants.authMe),
-          headers: {'Authorization': 'Bearer $token'},
-        );
+        final userResp = await ApiClient.get(Uri.parse(ApiConstants.authMe));
         if (userResp.statusCode == 200) {
           return AdminModel.fromJson(jsonDecode(userResp.body), token);
         }
@@ -38,6 +40,7 @@ class AuthService {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
+    await prefs.remove('refresh_token');
   }
 
   Future<bool> isAdminSetupNeeded() async {
@@ -100,10 +103,7 @@ class AuthService {
   }
 
   Future<AdminModel> getProfile(String token) async {
-    final response = await http.get(
-      Uri.parse(ApiConstants.authMe),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    final response = await ApiClient.get(Uri.parse(ApiConstants.authMe));
     if (response.statusCode == 200) {
       return AdminModel.fromJson(jsonDecode(response.body), token);
     }
@@ -124,12 +124,10 @@ class AuthService {
   }
 
   Future<bool> updateProfile(String firstName, String lastName, String email, String phoneNumber) async {
-    final token = await getToken();
-    final response = await http.put(
+    final response = await ApiClient.put(
       Uri.parse(ApiConstants.authMe),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
         'first_name': firstName,
@@ -142,12 +140,10 @@ class AuthService {
   }
 
   Future<String?> changePassword(String oldPassword, String newPassword) async {
-    final token = await getToken();
-    final response = await http.post(
+    final response = await ApiClient.post(
       Uri.parse(ApiConstants.changePassword),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
         'old_password': oldPassword,
@@ -164,11 +160,7 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> getHealth() async {
-    final token = await getToken();
-    final response = await http.get(
-      Uri.parse(ApiConstants.health),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    final response = await ApiClient.get(Uri.parse(ApiConstants.health));
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }

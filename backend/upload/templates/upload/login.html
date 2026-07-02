@@ -1,0 +1,383 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AV Admin Portal — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    :root {
+      --primary:       #9E2016;
+      --primary-light: #BF3328;
+      --accent:        #00D9A6;
+      --danger:        #FF5252;
+      --bg1:           #F5F0EB;
+      --border:        #E0D5C8;
+      --border-l:      #EFE8E1;
+      --text:          #1A0A08;
+      --sub:           #5A4A40;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Split Layout Container ── */
+    .page-wrap {
+      width: 100%; maxWidth: 1000px; padding: 24px;
+      display: flex; justify-content: center;
+    }
+    .split-card {
+      display: flex;
+      flex-direction: row;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: 0 24px 60px rgba(158,32,22,0.06), 0 8px 24px rgba(0,0,0,0.03);
+      overflow: hidden;
+      width: 100%;
+      max-width: 960px;
+      min-height: 600px;
+      animation: fadeUp .5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Left Side (Brand) ── */
+    .brand-side {
+      flex: 1.1;
+      background: transparent;
+      border-right: 1px solid rgba(0,0,0,0.06);
+      position: relative;
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      color: var(--text);
+      overflow: hidden;
+    }
+    .brand-side::before, .brand-side::after {
+      content: ''; position: absolute; border-radius: 50%;
+      background: rgba(158,32,22,0.03);
+      pointer-events: none;
+    }
+    .brand-side::before { width: 400px; height: 400px; top: -100px; left: -100px; }
+    .brand-side::after  { width: 300px; height: 300px; bottom: -50px; right: -80px; }
+
+    .b-logo {
+      width: 92px; height: 92px;
+      border-radius: 24px; margin-bottom: 34px;
+      box-shadow: 0 12px 30px rgba(158,32,22,0.18);
+      position: relative; z-index: 1;
+      overflow: hidden;
+      background: var(--bg1);
+    }
+    .b-logo img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .brand-side h1 {
+      font-size: 34px; font-weight: 800; line-height: 1.15;
+      letter-spacing: -0.5px; margin-bottom: 16px;
+      position: relative; z-index: 1; color: var(--text);
+    }
+    .brand-side p {
+      font-size: 15px; font-weight: 500; line-height: 1.6;
+      color: var(--sub);
+      max-width: 300px;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Right Side (Form) ── */
+    .form-side {
+      flex: 1;
+      padding: 60px 70px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: transparent;
+    }
+
+    .welcome { margin-bottom: 32px; }
+    .welcome h2 { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+    .welcome p  { font-size: 14px; color: var(--sub); margin-top: 4px; }
+
+    /* Error Banner */
+    .error-banner {
+      background: rgba(255,82,82,0.06);
+      border-left: 4px solid var(--danger);
+      border-radius: 8px; padding: 14px 16px;
+      margin-bottom: 24px; display: flex; align-items: flex-start; gap: 10px;
+      font-size: 13px; color: var(--text); line-height: 1.5;
+    }
+    .error-banner svg {
+      flex-shrink: 0; width: 18px; height: 18px; stroke: var(--danger); fill: none; stroke-width: 2.5; stroke-linecap:round; stroke-linejoin:round; margin-top: 1px;
+    }
+
+    /* Fields */
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block; font-size: 13px; font-weight: 700;
+      color: var(--text); margin-bottom: 8px; letter-spacing: 0.2px;
+    }
+    .input-wrap { position: relative; }
+    .input-wrap .field-icon {
+      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+      pointer-events: none; color: var(--sub); opacity: 0.5; transition: opacity .2s;
+    }
+    .input-wrap .field-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap:round; stroke-linejoin:round; }
+
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid var(--border-l);
+      border-radius: 12px;
+      padding: 14px 44px 14px 46px;
+      font-family: inherit; font-size: 14px; font-weight: 600;
+      color: var(--text);
+      outline: none;
+      transition: all .2s ease;
+    }
+    input::placeholder { color: rgba(90,74,64,0.45); font-weight: 500; }
+    input:focus {
+      background: rgba(255,255,255,0.9);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(158,32,22,0.08);
+    }
+    input:focus + .field-icon { opacity: 1; color: var(--primary); }
+
+    /* Chrome autofill override */
+    input:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0px 1000px rgba(255,255,255,0.9) inset !important;
+      -webkit-text-fill-color: var(--text) !important;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+
+    .toggle-pass {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; padding: 4px;
+      color: var(--sub); opacity: 0.6; transition: opacity .2s;
+    }
+    .toggle-pass:hover { opacity: 1; color: var(--primary); }
+    .toggle-pass svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap:round; stroke-linejoin:round; }
+
+    /* Checkbox */
+    .row-opts { display: flex; align-items: center; justify-content: space-between; margin: 24px 0 32px; }
+    .remember { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; color: var(--sub); font-weight: 500; user-select: none; }
+    .checkbox {
+      width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s; background: transparent;
+    }
+    .checkbox.checked { background: var(--primary); border-color: var(--primary); }
+    .checkbox svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 3; stroke-linecap:round; stroke-linejoin:round; display: none; }
+    .checkbox.checked svg { display: block; }
+    input[type="submit"] { display: none; } /* Hidden, we use button */
+
+    /* Button */
+    .btn-submit {
+      width: 100%; height: 50px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 12px;
+      font-family: inherit; font-size: 15px; font-weight: 700; letter-spacing: 0.3px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 8px 24px rgba(158,32,22,0.25);
+      transition: all .2s ease;
+    }
+    .btn-submit:hover {
+      filter: brightness(1.1); transform: translateY(-1px);
+      box-shadow: 0 12px 28px rgba(158,32,22,0.3);
+    }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit svg { width: 18px; height: 18px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap:round; stroke-linejoin:round; }
+
+    /* Footer piece */
+    .f-note { text-align: center; font-size: 11.5px; color: var(--sub); opacity: 0.7; margin-top: 36px; }
+
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    /* ── Banners (Toast) ── */
+    #toast-container {
+      position: fixed; bottom: 32px; right: 32px; z-index: 1000;
+      display: flex; flex-direction: column; gap: 12px; pointer-events: none;
+    }
+    .banner {
+      border-radius: 12px; padding: 14px 18px; width: max-content; max-width: 400px;
+      display: flex; gap: 12px; font-size: 13px; line-height: 1.5; align-items: flex-start;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.12); pointer-events: auto;
+      animation: slideInUp .5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      opacity: 0; transform: translateY(30px) scale(0.95);
+    }
+    @keyframes slideInUp { to { opacity: 1; transform: translateY(0) scale(1); } }
+    .banner.fade-out { animation: fadeOutDown .4s ease forwards; }
+    @keyframes fadeOutDown { to { opacity: 0; transform: translateY(20px) scale(0.95); } }
+    .banner svg { flex-shrink: 0; width: 20px; height: 20px; stroke-width: 2.2; margin-top:2px; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+    .banner-err { background: #fff; border-left: 4px solid var(--danger); color: var(--text); }
+    .banner-err svg { stroke: var(--danger); }
+    .banner-ok  { background: #fff; border-left: 4px solid var(--accent); color: var(--text); }
+    .banner-ok  svg { stroke: var(--accent); }
+    .toast-close { margin-left: auto; cursor: pointer; color: var(--sub); opacity: 0.6; padding: 2px; }
+    .toast-close:hover { opacity: 1; color: var(--danger); }
+    .toast-close svg { width: 16px; height: 16px; stroke-width: 2; margin-top: 0; }
+
+    /* Responsive */
+    @media (max-width: 860px) {
+      .split-card { flex-direction: column; }
+      .brand-side { border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 40px 30px; flex: none; align-items: center; text-align: center; }
+      .b-logo { margin-bottom: 20px; width: 72px; height: 72px; border-radius: 18px; }
+      .brand-side h1 { font-size: 26px; }
+      .brand-side p { font-size: 14px; max-width: 100%; }
+      .form-side { padding: 40px 30px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-wrap">
+    <div class="split-card">
+      
+      <!-- Brand Left Panel -->
+      <div class="brand-side">
+        <div class="b-logo">
+          <img src="{% static 'upload/logo.png' %}" alt="AV Logo" onerror="this.style.display='none'"/>
+        </div>
+        <h1>AV Admin<br>Portal</h1>
+        <p>Central operational hub for managing workforce, product inventory, and site access.</p>
+      </div>
+
+      <!-- Form Right Panel -->
+      <div class="form-side">
+        <div class="welcome">
+          <h2>Sign in</h2>
+          <p>Please enter your admin credentials.</p>
+        </div>
+
+        {% if error %}
+        <div class="error-banner">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div>{{ error }}</div>
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'upload:login' %}" id="login-form">
+          {% csrf_token %}
+          
+          <div class="field">
+            <label for="id_username">Username</label>
+            <div class="input-wrap">
+              <input id="id_username" type="text" name="username" placeholder="Admin username" autocomplete="username" required/>
+              <span class="field-icon">
+                <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="id_password">Password</label>
+            <div class="input-wrap">
+              <input id="id_password" type="password" name="password" placeholder="••••••••" autocomplete="current-password" required/>
+              <span class="field-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <button type="button" class="toggle-pass" id="toggle-pass" tabindex="-1" aria-label="Toggle password visibility">
+                <svg id="eye-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="row-opts">
+            <label class="remember">
+              <div class="checkbox" id="chk-box">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              Remember me
+            </label>
+          </div>
+
+          <button type="submit" class="btn-submit" id="btn-submit">
+            Sign In
+            <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </button>
+        </form>
+
+        <div class="f-note">Secure Internal Access &copy; 2025</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="toast-container">
+    {% if messages %}
+      {% for msg in messages %}
+      <div class="banner {% if msg.tags == 'error' %}banner-err{% else %}banner-ok{% endif %} active-toast">
+        {% if msg.tags == 'error' %}
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {% else %}
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        {% endif %}
+        <div><strong>{% if msg.tags == 'error' %}Error{% else %}Success{% endif %}</strong> — {{ msg }}</div>
+        <div class="toast-close" onclick="closeToast(this.parentElement)"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+      </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <script>
+    // Password visibility toggle
+    const passInput = document.getElementById('id_password');
+    const eyeIcon   = document.getElementById('eye-icon');
+    const eyeOff    = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+    const eyeOn     = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+    let passVisible = false;
+    document.getElementById('toggle-pass').addEventListener('click', () => {
+      passVisible = !passVisible;
+      passInput.type = passVisible ? 'text' : 'password';
+      eyeIcon.innerHTML = passVisible ? eyeOff : eyeOn;
+    });
+
+    // Checkbox UI toggle
+    document.getElementById('chk-box').addEventListener('click', function(e) {
+      e.stopPropagation();
+      this.classList.toggle('checked');
+    });
+
+    // Form submission UI logic
+    document.getElementById('login-form').addEventListener('submit', function() {
+      const btn = document.getElementById('btn-submit');
+      btn.innerHTML = '<span class="spinner"></span>';
+      btn.disabled = true;
+    });
+
+    // Toast logic
+    function closeToast(el) {
+      if(el) {
+        el.classList.add('fade-out');
+        setTimeout(() => el.remove(), 400);
+      }
+    }
+    document.querySelectorAll('.active-toast').forEach(t => {
+      setTimeout(() => closeToast(t), 3500);
+    });
+  </script>
+</body>
+</html>

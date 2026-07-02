@@ -43,7 +43,7 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       final result = await FilePicker.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['csv', 'xlsx', 'xls'],
+        allowedExtensions: ['xlsx'],
         withData: true,
       );
 

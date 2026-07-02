@@ -608,7 +608,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   try {
                     final result = await FilePicker.pickFiles(
                       type: FileType.custom,
-                      allowedExtensions: ['xlsx', 'xls', 'csv'],
+                      allowedExtensions: ['xlsx'],
                       withData: true,
                     );
 

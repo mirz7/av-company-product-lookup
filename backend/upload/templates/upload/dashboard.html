@@ -1,0 +1,683 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AV Admin Portal — Inventory Upload</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    :root {
+      --primary:       #9E2016;
+      --primary-light: #BF3328;
+      --primary-glow:  #C0392B;
+      --accent:        #00B894;
+      --warning:       #E67E22;
+      --danger:        #E74C3C;
+      --bg1:    #F5F0EB;
+      --bg2:    #EDE5DC;
+      --bg3:    #CFBBAA;
+      --card:     rgba(255,255,255,0.85);
+      --card-h:   rgba(255,255,255,0.98);
+      --border:   #DDD0C4;
+      --light-card: #F8F4F0;
+      --text:   #1A0A08;
+      --sub:    #6B5344;
+      --sub2:   #9B8070;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-image: linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 60%, var(--bg3) 100%);
+      background-attachment: fixed;
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .top-bar {
+      position: sticky; top: 0; z-index: 200;
+      padding: 0 32px;
+      height: 62px;
+      background: rgba(245,240,235,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    }
+    .tb-left { display: flex; align-items: center; gap: 14px; }
+    .tb-logo {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      box-shadow: 0 3px 10px rgba(158,32,22,0.28);
+      overflow: hidden; flex-shrink: 0;
+    }
+    .tb-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .tb-logo .fb { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 14px; font-weight: 800; color: #fff; }
+    .tb-brand h1 { font-size: 15px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text); line-height: 1; }
+    .tb-brand p  { font-size: 10px; color: var(--sub); letter-spacing: 0.4px; margin-top: 2px; }
+
+    /* ── Nav tabs ── */
+    .tb-nav { display: flex; gap: 4px; margin-left: 28px; }
+    .nav-tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      color: var(--sub);
+      text-decoration: none;
+      transition: background .18s, color .18s;
+    }
+    .nav-tab svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .nav-tab:hover  { background: rgba(158,32,22,0.07); color: var(--primary); }
+    .nav-tab.active { background: rgba(158,32,22,0.10); color: var(--primary); font-weight: 700; }
+
+    .tb-right { display: flex; align-items: center; gap: 10px; }
+    .admin-badge {
+      background: rgba(158,32,22,0.09);
+      border: 1px solid rgba(158,32,22,0.22);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 10px; font-weight: 800;
+      color: var(--primary);
+      letter-spacing: 1.5px; text-transform: uppercase;
+    }
+    .user-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 4px 12px 4px 4px;
+      font-size: 13px; font-weight: 600; color: var(--text);
+    }
+    .user-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; color: #fff;
+    }
+    .logout-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(158,32,22,0.07);
+      border: 1px solid rgba(158,32,22,0.18);
+      border-radius: 10px;
+      padding: 7px 12px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 12px; font-weight: 600;
+      color: var(--primary);
+      text-decoration: none; cursor: pointer;
+      transition: background .2s;
+    }
+    .logout-btn:hover { background: rgba(158,32,22,0.13); }
+    .logout-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap:round; stroke-linejoin:round; }
+
+    /* ── Page ── */
+    .page-wrap { max-width: 1300px; margin: 0 auto; padding: 28px 28px 60px; }
+    .page-head { margin-bottom: 24px; }
+    .page-head h2 { font-size: 26px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+    .page-head p  { font-size: 12px; color: var(--sub); margin-top: 2px; }
+
+    /* ── Section header (Flutter red bar) ── */
+    .sec-head { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
+    .sec-bar  { width: 3px; height: 15px; border-radius: 2px; background: var(--primary); flex-shrink: 0; }
+    .sec-head h3 { font-size: 14px; font-weight: 800; letter-spacing: 0.4px; color: var(--text); }
+
+    /* ── Metric grid ── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .metric-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      transition: transform .18s, box-shadow .18s;
+    }
+    .metric-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.09); }
+    .metric-icon {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: rgba(158,32,22,0.09);
+      display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
+    }
+    .metric-icon.teal { background: rgba(0,184,148,0.10); }
+    .metric-icon.warn { background: rgba(230,126,34,0.10); }
+    .metric-icon svg { width: 17px; height: 17px; stroke: var(--primary); fill: none; stroke-width: 2; stroke-linecap:round; stroke-linejoin:round; }
+    .metric-icon.teal svg { stroke: var(--accent); }
+    .metric-icon.warn svg { stroke: var(--warning); }
+    .metric-label { font-size: 10px; color: var(--sub); font-weight: 500; letter-spacing: 0.3px; margin-bottom: 4px; text-transform: uppercase; }
+    .metric-value { font-size: 28px; font-weight: 700; line-height: 1; color: var(--text); letter-spacing: -0.5px; }
+    .metric-value.teal { color: var(--accent); }
+    .metric-value.warn { color: var(--warning); }
+
+    /* ── Main 2-col ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 20px;
+      align-items: stretch;
+    }
+    .left-col { min-width: 0; display: flex; flex-direction: column; }
+
+    /* ── Glass card ── */
+    .glass-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .glass-card + .glass-card { margin-top: 16px; }
+
+    /* ── Banners (Toast) ── */
+    #toast-container {
+      position: fixed; bottom: 32px; right: 32px; z-index: 1000;
+      display: flex; flex-direction: column; gap: 12px; pointer-events: none;
+    }
+    .banner {
+      border-radius: 12px; padding: 14px 18px; width: max-content; max-width: 400px;
+      display: flex; gap: 12px; font-size: 13px; line-height: 1.5; align-items: flex-start;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.12); pointer-events: auto;
+      animation: slideInUp .5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      opacity: 0; transform: translateY(30px) scale(0.95);
+    }
+    @keyframes slideInUp { to { opacity: 1; transform: translateY(0) scale(1); } }
+    .banner.fade-out { animation: fadeOutDown .4s ease forwards; }
+    @keyframes fadeOutDown { to { opacity: 0; transform: translateY(20px) scale(0.95); } }
+    .banner svg { flex-shrink: 0; width: 20px; height: 20px; stroke-width: 2.2; margin-top:2px; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+    .banner-err { background: var(--card-h); border-left: 4px solid var(--danger); color: var(--text); }
+    .banner-err svg { stroke: var(--danger); }
+    .banner-ok  { background: var(--card-h); border-left: 4px solid var(--accent); color: var(--text); }
+    .banner-ok  svg { stroke: var(--accent); }
+    .toast-close { margin-left: auto; cursor: pointer; color: var(--sub); opacity: 0.6; padding: 2px; }
+    .toast-close:hover { opacity: 1; color: var(--danger); }
+    .toast-close svg { width: 16px; height: 16px; stroke-width: 2; margin-top: 0; }
+
+    /* ── Result tiles ── */
+    .result-tiles { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin: 14px 0 18px; }
+    .r-tile { background: var(--light-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+    .r-tile .rl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--sub); margin-bottom: 3px; font-weight: 600; }
+    .r-tile .rv { font-size: 24px; font-weight: 700; line-height: 1; letter-spacing: -0.5px; }
+    .rv-c  { color: var(--accent); }
+    .rv-u  { color: var(--warning); }
+    .rv-s  { color: var(--sub); }
+    .rv-t  { color: var(--primary); }
+    .rv-db { color: var(--text); }
+    .r-tile-full { grid-column: span 4; }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      position: relative;
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      margin-bottom: 16px;
+      background: rgba(245,240,235,0.50);
+    }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--primary); background: rgba(158,32,22,0.04); }
+    .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .dz-icon {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: rgba(158,32,22,0.09);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;
+    }
+    .dz-icon svg { width: 22px; height: 22px; stroke: var(--primary); fill: none; stroke-width: 2; stroke-linecap:round; stroke-linejoin:round; }
+    .drop-zone h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .drop-zone p  { font-size: 12px; color: var(--sub); }
+    .ext-chip {
+      display: inline-block; margin-top: 9px;
+      background: rgba(0,184,148,0.09); border: 1px solid rgba(0,184,148,0.25);
+      border-radius: 6px; padding: 3px 10px;
+      font-size: 11px; font-weight: 600; color: #00695C;
+    }
+    .file-name { font-size: 12px; color: var(--primary); font-weight: 600; margin-top: 7px; display: none; word-break: break-all; }
+
+    /* ── Mode toggle ── */
+    .mode-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .mode-btn {
+      flex: 1; padding: 10px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--sub);
+      font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: all .18s;
+    }
+    .mode-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap:round; stroke-linejoin:round; }
+    .mode-btn.active { border-color: rgba(158,32,22,0.40); background: rgba(158,32,22,0.08); color: var(--primary); }
+
+    .mode-hint {
+      font-size: 12px; color: var(--sub);
+      background: rgba(230,126,34,0.07); border: 1px solid rgba(230,126,34,0.22);
+      border-radius: 10px; padding: 9px 14px; margin-bottom: 16px; line-height: 1.6;
+    }
+    .mode-hint.danger { background: rgba(231,76,60,0.06); border-color: rgba(231,76,60,0.20); color: #8B1A1A; }
+
+    /* ── Upload button ── */
+    .btn-upload {
+      width: 100%; height: 52px;
+      background: var(--primary); color: #fff; border: none; border-radius: 12px;
+      font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      box-shadow: 0 6px 20px rgba(158,32,22,0.28);
+      transition: filter .15s, transform .12s;
+    }
+    .btn-upload svg { width: 17px; height: 17px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap:round; stroke-linejoin:round; }
+    .btn-upload:not(:disabled):hover  { filter: brightness(1.09); transform: translateY(-1px); }
+    .btn-upload:not(:disabled):active { transform: translateY(0); }
+    .btn-upload:disabled {
+      background: #c39691; cursor: not-allowed; opacity: 0.8; box-shadow: none;
+    }
+
+    /* ── Activity ── */
+    .right-col { position: relative; height: 100%; min-height: 450px; }
+    .right-col > .glass-card { 
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      display: flex; flex-direction: column; padding-bottom: 8px; 
+    }
+    .act-list-wrap { flex: 1; overflow-y: auto; padding-right: 8px; margin-right: -8px; }
+    .act-list-wrap::-webkit-scrollbar { width: 5px; }
+    .act-list-wrap::-webkit-scrollbar-thumb { background: rgba(107,83,68,0.2); border-radius: 4px; }
+    .act-list { list-style: none; }
+    .act-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 11px 14px; border-radius: 12px;
+      background: var(--light-card); border: 1px solid var(--border);
+      margin-bottom: 8px; transition: background .18s; cursor: pointer;
+    }
+    .act-item:hover { background: var(--card-h); border-color: rgba(158,32,22,0.25); }
+    .act-icon {
+      width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      background: rgba(158,32,22,0.09);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .act-icon svg { width: 17px; height: 17px; stroke: var(--primary); fill: none; stroke-width: 2; stroke-linecap:round; stroke-linejoin:round; }
+    .act-body { flex: 1; min-width: 0; }
+    .act-title { font-size: 12px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .act-sub   { font-size: 11px; color: var(--sub); margin-top: 2px; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; line-height: 1.4; }
+    .act-time  { font-size: 10px; color: var(--sub2); font-weight: 500; margin-top: 4px; }
+    .act-empty { background: var(--light-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; color: var(--sub); font-size: 13px; margin-top: auto; margin-bottom: auto;}
+    
+    /* ── Logout Modal ── */
+    #logout-modal .modal-box { max-width: 380px; text-align: center; }
+    #logout-modal .modal-icon { width: 52px; height: 52px; border-radius: 50%; background: rgba(231,76,60,0.1); color: var(--danger); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+    #logout-modal .modal-icon svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    #logout-modal h3 { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+    #logout-modal p { font-size: 13px; color: var(--sub); margin-bottom: 24px; line-height: 1.5; }
+    .logout-actions { display: flex; gap: 12px; }
+    .btn-cancel { flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: transparent; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text); transition: background .2s; }
+    .btn-cancel:hover { background: rgba(0,0,0,0.03); }
+    .btn-confirm { flex: 1; padding: 12px; border: none; border-radius: 10px; background: var(--danger); font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; color: #fff; transition: background .2s, transform .1s; text-decoration: none; }
+    .btn-confirm:hover { background: #C0392B; }
+    
+    /* ── Activity Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(26,10,8,0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      z-index: 1000; display: flex; align-items: center; justify-content: center;
+      opacity: 0; visibility: hidden; transition: all .2s;
+    }
+    .modal-overlay.show { opacity: 1; visibility: visible; }
+    .modal-box {
+      background: var(--card-h); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; width: 90%; max-width: 440px;
+      box-shadow: 0 10px 40px rgba(158,32,22,0.15);
+      transform: translateY(20px) scale(0.95); transition: all .3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .modal-overlay.show .modal-box { transform: translateY(0) scale(1); }
+    .modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .modal-head h3 { font-size: 16px; font-weight: 800; color: var(--text); }
+    .modal-close { background: none; border: none; cursor: pointer; color: var(--sub); padding: 4px; transition: color .15s; }
+    .modal-close svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap:round; stroke-linejoin:round; }
+    .modal-close:hover { color: var(--primary); }
+    .modal-body { font-size: 13px; color: var(--sub); line-height: 1.6; }
+    .modal-time { font-size: 11px; color: var(--sub2); font-weight: 600; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 6px;}
+    .modal-time svg { width:14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.35); border-top-color: #fff;
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+
+    /* ── Link to products ── */
+    .products-link {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 14px; border-radius: 12px;
+      background: rgba(158,32,22,0.06); border: 1px solid rgba(158,32,22,0.18);
+      text-decoration: none; margin-top: 16px;
+      transition: background .18s;
+    }
+    .products-link:hover { background: rgba(158,32,22,0.11); }
+    .products-link span { font-size: 13px; font-weight: 600; color: var(--primary); }
+    .products-link svg { width: 16px; height: 16px; stroke: var(--primary); fill: none; stroke-width: 2; stroke-linecap:round; stroke-linejoin:round; }
+
+    @media (max-width: 1100px) {
+      .main-grid    { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 900px) {
+      .result-tiles { grid-template-columns: repeat(2,1fr); }
+      .r-tile-full  { grid-column: span 2; }
+    }
+    @media (max-width: 700px) {
+      .top-bar   { padding: 0 14px; }
+      .page-wrap { padding: 18px 14px 40px; }
+      .admin-badge { display: none; }
+      .tb-nav .nav-tab span { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <div class="tb-left">
+    <div class="tb-logo">
+      <img src="{% static 'upload/logo.png' %}" alt="AV"
+           onerror="this.style.display='none';this.parentElement.innerHTML='<div class=fb>AV</div>'"/>
+    </div>
+    <div class="tb-brand">
+      <h1>AV Admin Portal</h1>
+      <p>Central Operational Hub</p>
+    </div>
+    <nav class="tb-nav">
+      <a href="{% url 'upload:dashboard' %}" class="nav-tab active">
+        <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        <span>Upload</span>
+      </a>
+      <a href="{% url 'upload:products' %}" class="nav-tab">
+        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <span>Products</span>
+      </a>
+    </nav>
+  </div>
+  <div class="tb-right">
+    <div class="admin-badge">Admin</div>
+    <div class="user-chip">
+      <div class="user-avatar">{{ user.username|slice:":1"|upper }}</div>
+      {{ user.username }}
+    </div>
+    <a href="#" onclick="showLogoutPopup(event)" class="logout-btn">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </a>
+  </div>
+</header>
+
+<main class="page-wrap">
+
+  <div class="page-head">
+    <h2>Inventory Upload</h2>
+    <p>Upload an Excel sheet to add or update the products table</p>
+  </div>
+
+  <!-- Metric cards -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+      <div class="metric-label">Total Products</div>
+      <div class="metric-value">{{ total_products }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon teal"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div class="metric-label">Recent Uploads</div>
+      <div class="metric-value teal">{{ recent_logs|length }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon warn"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="3"/></svg></div>
+      <div class="metric-label">Accepted Format</div>
+      <div class="metric-value warn" style="font-size:20px;letter-spacing:1px;">.XLSX</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <div class="metric-label">Access Level</div>
+      <div class="metric-value" style="font-size:19px;">{% if user.is_superuser %}Superuser{% else %}Staff{% endif %}</div>
+    </div>
+  </div>
+
+  <!-- 2-column main layout -->
+  <div class="main-grid">
+
+    <!-- LEFT — Upload -->
+    <div class="left-col">
+      {% if upload_result %}
+      <div class="result-tiles" style="margin-bottom:18px;">
+        <div class="r-tile"><div class="rl">Created</div><div class="rv rv-c">{{ upload_result.created }}</div></div>
+        <div class="r-tile"><div class="rl">Updated</div><div class="rv rv-u">{{ upload_result.updated }}</div></div>
+        <div class="r-tile"><div class="rl">Skipped</div><div class="rv rv-s">{{ upload_result.skipped }}</div></div>
+        <div class="r-tile"><div class="rl">Rows</div><div class="rv rv-t">{{ upload_result.total_rows }}</div></div>
+        <div class="r-tile r-tile-full"><div class="rl">Total Products in Database</div><div class="rv rv-db">{{ upload_result.total_in_db }}</div></div>
+      </div>
+      {% endif %}
+
+      <div class="glass-card">
+        <div class="sec-head"><div class="sec-bar"></div><h3>Upload Excel File</h3></div>
+
+        <form method="post" enctype="multipart/form-data" id="upload-form">
+          {% csrf_token %}
+          <input type="hidden" name="mode" id="mode-val" value="upsert"/>
+
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" name="file" id="file-input" accept=".xlsx" title=""/>
+            <div class="dz-icon"><svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div>
+            <h4>Drop your Excel file here</h4>
+            <p>or click anywhere to browse</p>
+            <div class="ext-chip">.xlsx only</div>
+            <div class="file-name" id="file-name"></div>
+          </div>
+
+          <div class="mode-row">
+            <button type="button" class="mode-btn active" id="btn-upsert" onclick="setMode('upsert')">
+              <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Update
+            </button>
+            <button type="button" class="mode-btn" id="btn-replace" onclick="setMode('replace')">
+              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg> Replace All
+            </button>
+          </div>
+          <div class="mode-hint" id="mode-hint">
+            <strong>Upsert mode:</strong> Adds new products and updates existing ones by product code. Products not in this file are kept unchanged.
+          </div>
+
+          <button type="submit" class="btn-upload" id="btn-upload" disabled>
+            <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            Upload &amp; Process
+          </button>
+        </form>
+
+        <!-- <a href="{% url 'upload:products' %}" class="products-link">
+          <span>📦 View all products in database</span>
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </a> -->
+      </div>
+    </div>
+
+    <!-- RIGHT — Activity -->
+    <div class="right-col">
+      <div class="glass-card">
+        <div class="sec-head"><div class="sec-bar"></div><h3>Recent Upload Activity</h3></div>
+        {% if recent_logs %}
+        <div class="act-list-wrap">
+          <ul class="act-list">
+            {% for log in recent_logs %}
+            <li class="act-item" 
+                data-title="{{ log.title }}" 
+                data-sub="{{ log.subtitle }}" 
+                data-time="{{ log.created_at|date:'M d, Y — h:i A' }}"
+                onclick="showActPopup(this.dataset.title, this.dataset.sub, this.dataset.time)">
+              <div class="act-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+              <div class="act-body">
+                <div class="act-title">{{ log.title }}</div>
+                <div class="act-sub">{{ log.subtitle }}</div>
+                <div class="act-time">{{ log.created_at|date:"M d, Y — h:i A" }}</div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% else %}
+        <div class="act-empty">No uploads recorded yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div id="toast-container">
+  {% if messages %}
+    {% for msg in messages %}
+    <div class="banner {% if msg.tags == 'error' %}banner-err{% else %}banner-ok{% endif %} active-toast">
+      {% if msg.tags == 'error' %}
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      {% else %}
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      {% endif %}
+      <div><strong>{% if msg.tags == 'error' %}Error{% else %}Success{% endif %}</strong> — {{ msg }}</div>
+      <div class="toast-close" onclick="closeToast(this.parentElement)"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if upload_result %}
+  <div class="banner banner-ok active-toast">
+    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    <div><strong>Upload successful</strong> — <em>{{ upload_result.original_filename }}</em> in <strong>{{ upload_result.mode|upper }}</strong> mode.</div>
+    <div class="toast-close" onclick="closeToast(this.parentElement)"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+  </div>
+  {% endif %}
+  {% if upload_error %}
+  <div class="banner banner-err active-toast">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <div><strong>Upload failed</strong> — {{ upload_error }}</div>
+    <div class="toast-close" onclick="closeToast(this.parentElement)"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Logout Modal -->
+<div class="modal-overlay" id="logout-modal" onclick="closeLogoutPopup(event)">
+  <div class="modal-box">
+    <div class="modal-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+    <h3>Sign Out</h3>
+    <p>Are you sure you want to sign out of the Admin Portal?</p>
+    <div class="logout-actions">
+      <button class="btn-cancel" onclick="closeLogoutPopup()">Cancel</button>
+      <a href="{% url 'upload:logout' %}" class="btn-confirm" style="display:flex;align-items:center;justify-content:center;">Yes, Sign Out</a>
+    </div>
+  </div>
+</div>
+
+<!-- Activity Modal -->
+<div class="modal-overlay" id="act-modal" onclick="closeActPopup(event)">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="act-modal-title">Activity Title</h3>
+      <button class="modal-close" onclick="closeActPopup()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" id="act-modal-desc">
+      Activity details will appear here.
+    </div>
+    <div class="modal-time">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span id="act-modal-time">M d, Y - h:i A</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  function setMode(m) {
+    document.getElementById('mode-val').value = m;
+    document.getElementById('btn-upsert').classList.toggle('active', m === 'upsert');
+    document.getElementById('btn-replace').classList.toggle('active', m === 'replace');
+    const hint = document.getElementById('mode-hint');
+    if (m === 'replace') {
+      hint.className = 'mode-hint danger';
+      hint.innerHTML = '<strong>Replace All mode:</strong> ⚠ Deletes EVERY existing product first, then inserts the file\'s data. This action is irreversible.';
+    } else {
+      hint.className = 'mode-hint';
+      hint.innerHTML = '<strong>Update mode:</strong> Adds new products and updates existing ones by product code. Products not in this file are kept unchanged.';
+    }
+  }
+  const fi = document.getElementById('file-input');
+  
+  function updateUploadBtn(hasFile) {
+    document.getElementById('btn-upload').disabled = !hasFile;
+  }
+
+  fi.addEventListener('change', function() {
+    const el = document.getElementById('file-name');
+    el.textContent = this.files.length ? '📎 ' + this.files[0].name : '';
+    el.style.display = this.files.length ? 'block' : 'none';
+    updateUploadBtn(this.files.length > 0);
+  });
+  const z = document.getElementById('drop-zone');
+  z.addEventListener('dragover',  e => { e.preventDefault(); z.classList.add('over'); });
+  z.addEventListener('dragenter', e => { e.preventDefault(); z.classList.add('over'); });
+  z.addEventListener('dragleave', () => z.classList.remove('over'));
+  z.addEventListener('drop', e => {
+    e.preventDefault(); z.classList.remove('over');
+    const f = e.dataTransfer.files[0]; if (!f) return;
+    const dt = new DataTransfer(); dt.items.add(f); fi.files = dt.files;
+    const el = document.getElementById('file-name');
+    el.textContent = '📎 ' + f.name; el.style.display = 'block';
+    updateUploadBtn(true);
+  });
+  document.getElementById('upload-form').addEventListener('submit', function() {
+    const b = document.getElementById('btn-upload');
+    b.innerHTML = '<span class="spinner"></span> Processing…'; b.disabled = true;
+  });
+
+  // Modal logic
+  function showActPopup(title, sub, time) {
+    document.getElementById('act-modal-title').textContent = title;
+    // convert dash to bullet for readability if applicable, but keep it simple
+    document.getElementById('act-modal-desc').innerHTML = sub.replace(' — ', '<br><br><strong>Stats:</strong><br>');
+    document.getElementById('act-modal-time').textContent = time;
+    document.getElementById('act-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeActPopup(e) {
+    if (e && e.target !== e.currentTarget) return; // Only close if clicking overlay or close btn
+    document.getElementById('act-modal').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  function showLogoutPopup(e) {
+    if (e) e.preventDefault();
+    document.getElementById('logout-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLogoutPopup(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('logout-modal').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  // Toast logic
+  function closeToast(el) {
+    if(el) {
+      el.classList.add('fade-out');
+      setTimeout(() => el.remove(), 400);
+    }
+  }
+  document.querySelectorAll('.active-toast').forEach(t => {
+    setTimeout(() => closeToast(t), 3500);
+  });
+</script>
+</body>
+</html>

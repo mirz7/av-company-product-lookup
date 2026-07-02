@@ -2,19 +2,16 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
-import 'auth_service.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/network/api_client.dart';
 
 class ProductService {
-  final AuthService _auth = AuthService();
 
   Future<List<Map<String, dynamic>>?> searchProductsRaw(String query) async {
     try {
-      final token = await _auth.getToken();
       var uri = Uri.parse(ApiConstants.products);
-      // Backend supports both 'query' and 'code' params
       if (query.isNotEmpty) uri = uri.replace(queryParameters: {'query': query});
-      final response = await http.get(uri, headers: {'Authorization': 'Bearer $token'});
+      final response = await ApiClient.get(uri);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data is List) return data.cast<Map<String, dynamic>>();
@@ -32,7 +29,10 @@ class ProductService {
 
   Future<Map<String, dynamic>> uploadInventory(PlatformFile file, {String mode = 'upsert'}) async {
     try {
-      final token = await _auth.getToken();
+      // Small proactive call to ensure token is refreshed if expired
+      await ApiClient.get(Uri.parse(ApiConstants.health));
+      final token = await ApiClient.getFreshTokenProactively();
+      
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('${ApiConstants.baseUrl}/admin/products/upload-inventory/'),

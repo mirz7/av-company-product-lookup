@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../data/models/employee_model.dart';
 import '../data/services/auth_service.dart';
 import '../core/constants/api_constants.dart';
+import '../core/network/api_client.dart';
 
 class ApprovalProvider extends ChangeNotifier {
   final AuthService _auth = AuthService();
@@ -14,16 +14,12 @@ class ApprovalProvider extends ChangeNotifier {
   List<Employee> get pendingApprovals => _pendingApprovals;
   int get pendingCount => _pendingApprovals.length;
 
-  Future<Map<String, String>> _headers() async {
-    final token = await _auth.getToken();
-    return {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'};
-  }
+
 
   Future<void> fetchApprovals() async {
     isLoading = true; errorMessage = null; notifyListeners();
     try {
-      final headers = await _headers();
-      final response = await http.get(Uri.parse(ApiConstants.approvals), headers: headers);
+      final response = await ApiClient.get(Uri.parse(ApiConstants.approvals));
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
         _pendingApprovals = data.map((e) => Employee.fromJson(e)).toList();
@@ -36,22 +32,16 @@ class ApprovalProvider extends ChangeNotifier {
   }
 
   Future<void> approveEmployee(int id) async {
-    final headers = await _headers();
-    // Use dedicated approve endpoint
-    await http.post(
+    await ApiClient.post(
       Uri.parse('${ApiConstants.approvals}$id/approve/'),
-      headers: headers,
     );
     _pendingApprovals.removeWhere((e) => e.id == id);
     notifyListeners();
   }
 
   Future<void> rejectEmployee(int id) async {
-    final headers = await _headers();
-    // Use dedicated reject endpoint
-    await http.post(
+    await ApiClient.post(
       Uri.parse('${ApiConstants.approvals}$id/reject/'),
-      headers: headers,
     );
     _pendingApprovals.removeWhere((e) => e.id == id);
     notifyListeners();

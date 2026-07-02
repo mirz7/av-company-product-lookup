@@ -326,34 +326,7 @@ class AdminUploadInventoryView(APIView):
         rows_data = []
         headers = []
 
-        if filename.endswith('.csv') or filename.endswith('.tsv') or filename.endswith('.txt'):
-            try:
-                file_data = file_bytes.decode('utf-8-sig')  # UTF-8 BOM
-            except UnicodeDecodeError:
-                try:
-                    file_data = file_bytes.decode('latin-1')
-                except Exception as e:
-                    return Response({'error': f'Failed to decode CSV encoding: {str(e)}'}, status=400)
-
-            # Auto-detect delimiter
-            delimiter = ','
-            first_line = file_data.split('\n')[0] if file_data else ''
-            if '\t' in first_line and first_line.count('\t') > first_line.count(','):
-                delimiter = '\t'
-            elif ';' in first_line and first_line.count(';') > first_line.count(','):
-                delimiter = ';'
-
-            reader = csv.reader(io.StringIO(file_data), delimiter=delimiter)
-            try:
-                headers = [h.strip().lower() for h in next(reader, [])]
-            except StopIteration:
-                return Response({'error': 'CSV file is empty.'}, status=400)
-                
-            for row in reader:
-                if row and any(cell.strip() != '' for cell in row):
-                    rows_data.append(row)
-                    
-        elif filename.endswith('.xlsx'):
+        if filename.endswith('.xlsx'):
             try:
                 wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
                 sheet = wb.active
@@ -377,7 +350,7 @@ class AdminUploadInventoryView(APIView):
             except Exception as e:
                 return Response({'error': f'Failed to parse Excel file: {str(e)}'}, status=400)
         else:
-            return Response({'error': 'Invalid file format. Only CSV, TSV, and Excel (.XLSX) files are supported.'}, status=400)
+            return Response({'error': 'Invalid file format. Only Excel (.XLSX) files are supported. CSV is not allowed.'}, status=400)
 
         if not headers or all(h == '' for h in headers):
             return Response({'error': 'File is empty or missing headers.'}, status=400)
@@ -390,7 +363,7 @@ class AdminUploadInventoryView(APIView):
                 code_idx = idx
             elif h in ['product name', 'product_name', 'name', 'itemname', 'description', 'item_name', 'item name']:
                 name_idx = idx
-            elif h in ['price label', 'price_label', 'label', 'description_price']:
+            elif h in ['price label', 'price_label', 'label', 'description_price', 'unit name', 'unit_name', 'unit']:
                 label_idx = idx
             elif h in ['price a', 'price_a', 'price 1', 'price_1', 'unitprice', 'unit_price', 'price', 'a']:
                 price1_idx = idx
