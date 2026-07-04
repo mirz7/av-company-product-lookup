@@ -1,5 +1,13 @@
 from rest_framework import serializers
-from .models import AdminNotification
+from .models import AdminNotification, ActivityLog
+
+class ActivityLogSerializer(serializers.ModelSerializer):
+    timestamp = serializers.DateTimeField(source='created_at', read_only=True)
+    type = serializers.CharField(source='activity_type', read_only=True)
+
+    class Meta:
+        model = ActivityLog
+        fields = ['id', 'type', 'title', 'subtitle', 'timestamp']
 
 class AdminNotificationSerializer(serializers.ModelSerializer):
     class Meta:

@@ -21,6 +21,7 @@ import 'screens/employees/employees_screen.dart';
 import 'screens/approvals/approvals_screen.dart';
 import 'screens/search/search_screen.dart';
 import 'screens/profile/profile_screen.dart';
+import 'screens/activities/activities_screen.dart';
 import 'screens/login/registration_screen.dart';
 import 'screens/login/forgot_password_screen.dart';
 import 'screens/login/reset_password_screen.dart';
@@ -88,6 +89,7 @@ final _router = GoRouter(
       ],
     ),
     GoRoute(path: RouteConstants.approvals, builder: (context, state) => const ApprovalsScreen()),
+    GoRoute(path: RouteConstants.activities, builder: (context, state) => const ActivitiesScreen()),
   ],
 );
 

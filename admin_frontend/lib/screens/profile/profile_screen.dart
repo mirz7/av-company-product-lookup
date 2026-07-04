@@ -753,15 +753,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   duration: const Duration(milliseconds: 200),
                   height: 56,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: uploadMode == 'upsert'
-                          ? [AppTheme.primary, AppTheme.primaryLight]
-                          : [AppTheme.danger, AppTheme.danger.withOpacity(0.8)],
+                    gradient: const LinearGradient(
+                      colors: [AppTheme.primary, AppTheme.primaryLight],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: (uploadMode == 'upsert' ? AppTheme.primary : AppTheme.danger).withOpacity(0.3),
+                        color: AppTheme.primary.withOpacity(0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       )

@@ -102,6 +102,23 @@ class AuthService {
     }
   }
 
+  Future<void> verifyOtp(String email, String otp) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.verifyOtp),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'otp': otp}),
+      );
+      if (response.statusCode == 200) return;
+      
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to verify OTP');
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Server unreachable. Please try again later.');
+    }
+  }
+
   Future<AdminModel> getProfile(String token) async {
     final response = await ApiClient.get(Uri.parse(ApiConstants.authMe));
     if (response.statusCode == 200) {

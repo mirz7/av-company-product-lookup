@@ -5,6 +5,31 @@ from rest_framework.views import APIView
 from .serializers import UserRegistrationSerializer, UserProfileSerializer
 from rest_framework.exceptions import NotFound
 from .mssql_client import search_products
+import threading
+from django.core.mail import send_mail
+from django.conf import settings
+
+
+class EmailThread(threading.Thread):
+    def __init__(self, subject, message, recipient_list, html_message=None):
+        self.subject = subject
+        self.message = message
+        self.recipient_list = recipient_list
+        self.html_message = html_message
+        threading.Thread.__init__(self)
+
+    def run(self):
+        try:
+            send_mail(
+                self.subject,
+                self.message,
+                settings.DEFAULT_FROM_EMAIL,
+                self.recipient_list,
+                fail_silently=False,
+                html_message=self.html_message,
+            )
+        except Exception as e:
+            print(f"Email sending failed: {e}")
 
 
 class ProductSearchView(APIView):
@@ -186,24 +211,46 @@ class ForgotPasswordView(APIView):
         except Exception as e:
             return Response({'error': 'User profile setup incomplete.'}, status=500)
         
-        from django.conf import settings
-        import smtplib
-        from django.core.mail import send_mail
+        # Async plain-text email sending to avoid spam filters
+        plain_message = f'Your One-Time Password (OTP) to reset your password is: {otp}\n\nThis OTP is valid for 15 minutes. Please do not share it with anyone.'
         
-        try:
-            send_mail(
-                'Your Password Reset OTP',
-                f'Your One-Time Password (OTP) to reset your password is: {otp}\n\nThis OTP is valid for 15 minutes. Please do not share it with anyone.',
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
-            )
-        except smtplib.SMTPException as e:
-            return Response({'error': 'Failed to send email. Please check your SMTP configuration.'}, status=500)
-        except Exception as e:
-            return Response({'error': f'An error occurred while sending the email: {str(e)}'}, status=500)
+        EmailThread(
+            subject='AV Company - Your Password Reset OTP',
+            message=plain_message,
+            recipient_list=[email]
+        ).start()
             
         return Response({'message': 'An OTP has been sent to your email.'})
+
+class VerifyOtpView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from django.contrib.auth.models import User
+        from django.utils import timezone
+        
+        email = request.data.get('email')
+        otp = request.data.get('otp')
+        
+        if not all([email, otp]):
+            return Response({'error': 'Email and OTP are required.'}, status=400)
+            
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({'error': 'Invalid email or OTP.'}, status=400)
+            
+        try:
+            profile = user.profile
+        except Exception:
+            return Response({'error': 'User profile not found.'}, status=400)
+            
+        if profile.reset_otp != otp:
+            return Response({'error': 'Invalid OTP.'}, status=400)
+            
+        if not profile.reset_otp_expiry or timezone.now() > profile.reset_otp_expiry:
+            return Response({'error': 'OTP has expired.'}, status=400)
+            
+        return Response({'message': 'OTP verified successfully.'})
 
 class ResetPasswordView(APIView):
     permission_classes = [AllowAny]

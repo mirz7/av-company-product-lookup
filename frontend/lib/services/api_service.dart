@@ -380,6 +380,23 @@ class ApiService {
     }
   }
 
+  Future<void> verifyOtp(String email, String otp) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/verify-otp/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'otp': otp}),
+      );
+      if (response.statusCode == 200) return;
+      
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to verify OTP');
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Server unreachable. Please try again later.');
+    }
+  }
+
   Future<bool> resetPassword(
       String email, String otp, String newPassword) async {
     final response = await http.post(

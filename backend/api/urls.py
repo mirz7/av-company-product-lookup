@@ -1,10 +1,10 @@
 from django.urls import path
 from .views import (
     ProductSearchView, RegisterUserView, UserProfileView, IncrementSearchView,
-    AdminSetupCheckView, AdminSetupView, ForgotPasswordView, ResetPasswordView
+    AdminSetupCheckView, AdminSetupView, ForgotPasswordView, ResetPasswordView, VerifyOtpView
 )
 from .admin_views import (
-    AdminDashboardView, AdminEmployeeListView, AdminEmployeeDetailView,
+    AdminDashboardView, AdminActivityLogListView, AdminEmployeeListView, AdminEmployeeDetailView,
     AdminApprovalsView, AdminApproveEmployeeView, AdminRejectEmployeeView,
     AdminNotificationListView, AdminNotificationMarkReadView,
     AuthMeView, AdminChangePasswordView, AdminHealthView,
@@ -24,6 +24,7 @@ urlpatterns = [
     path('admin/setup/check/', AdminSetupCheckView.as_view(), name='admin_setup_check'),
     path('admin/setup/register/', AdminSetupView.as_view(), name='admin_setup_register'),
     path('auth/forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
+    path('auth/verify-otp/', VerifyOtpView.as_view(), name='verify_otp'),
     path('auth/reset-password/', ResetPasswordView.as_view(), name='reset_password'),
 
     # User profile (staff app)
@@ -38,6 +39,7 @@ urlpatterns = [
 
     # Admin endpoints
     path('admin/dashboard/', AdminDashboardView.as_view(), name='admin_dashboard'),
+    path('admin/activities/', AdminActivityLogListView.as_view(), name='admin_activities'),
     path('admin/employees/', AdminEmployeeListView.as_view(), name='admin_employees'),
     path('admin/employees/<int:pk>/', AdminEmployeeDetailView.as_view(), name='admin_employee_detail'),
     path('admin/approvals/', AdminApprovalsView.as_view(), name='admin_approvals'),
@@ -50,3 +52,4 @@ urlpatterns = [
     path('admin/products/upload-csv/', AdminUploadInventoryView.as_view(), name='admin_upload_csv'),
     path('admin/products/upload-inventory/', AdminUploadInventoryView.as_view(), name='admin_upload_inventory'),
 ]
+

@@ -191,7 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ]),
           ],
           const SizedBox(height: 30),
-          _sectionHead('Recent Activity', 'View All ›', textColor, sub, () => context.go(RouteConstants.employees)).animate().fadeIn(delay: 400.ms),
+          _sectionHead('Recent Activity', 'View All ›', textColor, sub, () => context.push(RouteConstants.activities)).animate().fadeIn(delay: 400.ms),
           const SizedBox(height: 14),
           
           if (prov.metrics != null && prov.metrics!.recentActivity.isEmpty)

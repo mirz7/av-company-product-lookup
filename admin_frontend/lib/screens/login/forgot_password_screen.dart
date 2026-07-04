@@ -22,7 +22,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
   
   bool _isLoading = false;
   String? _error;
-  bool _isOtpSent = false;
+  int _step = 0; // 0 = Email, 1 = OTP, 2 = Password
   late AnimationController _pulse;
 
   @override
@@ -56,7 +56,33 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('An OTP has been sent to your email.'))
       );
-      setState(() => _isOtpSent = true);
+      setState(() => _step = 1);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _continueToPassword() async {
+    if (_otpCtrl.text.trim().length < 6) {
+      setState(() => _error = 'Please enter a 6-digit OTP');
+      return;
+    }
+    
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      await AuthService().verifyOtp(_emailCtrl.text.trim(), _otpCtrl.text.trim());
+      if (!mounted) return;
+      setState(() {
+        _error = null;
+        _step = 2;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
@@ -110,24 +136,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
         child: SafeArea(child: SingleChildScrollView(child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
           child: Form(key: _formKey, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            SizedBox(height: _isOtpSent ? 20 : 60),
-            Icon(_isOtpSent ? Icons.published_with_changes_rounded : Icons.lock_reset_rounded, size: 80, color: AppTheme.primary).animate().scale(),
+            SizedBox(height: _step > 0 ? 20 : 60),
+            Icon(_step == 0 ? Icons.lock_reset_rounded : (_step == 1 ? Icons.pin_outlined : Icons.published_with_changes_rounded), size: 80, color: AppTheme.primary).animate().scale(),
             const SizedBox(height: 24),
-            Text(_isOtpSent ? 'RESET PASSWORD' : 'FORGOT PASSWORD', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 1.5)),
+            Text(_step == 0 ? 'FORGOT PASSWORD' : (_step == 1 ? 'VERIFY OTP' : 'RESET PASSWORD'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 1.5)),
             const SizedBox(height: 8),
-            Text(_isOtpSent ? 'Enter the OTP sent to your email and your new password.' : 'Enter your email to receive recovery instructions.', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: sub)),
+            Text(_step == 0 ? 'Enter your email to receive recovery instructions.' : (_step == 1 ? 'Enter the 6-digit code sent to your email.' : 'Securely create a new password.'), textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: sub)),
             const SizedBox(height: 40),
             
             if (_error != null)
               Container(padding: const EdgeInsets.all(12), margin: const EdgeInsets.only(bottom: 20), decoration: BoxDecoration(color: AppTheme.danger.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Text(_error!, style: const TextStyle(color: AppTheme.danger, fontSize: 13))),
 
-            if (!_isOtpSent) ...[
+            if (_step == 0) ...[
               _field(_emailCtrl, 'Email Address', 'Enter your registered email', Icons.email_outlined, textColor, sub, card, border),
-            ] else ...[
-              _field(_emailCtrl, 'Email Address', 'Enter your registered email', Icons.email_outlined, textColor, sub, card, border, readOnly: true),
-              const SizedBox(height: 16),
+            ] else if (_step == 1) ...[
               _field(_otpCtrl, 'OTP', 'Enter 6-digit OTP', Icons.pin_outlined, textColor, sub, card, border),
-              const SizedBox(height: 16),
+            ] else if (_step == 2) ...[
               _field(_passCtrl, 'New Password', 'Enter your new password', Icons.lock_outline, textColor, sub, card, border, isPass: true),
               const SizedBox(height: 16),
               _field(_confirmPassCtrl, 'Confirm Password', 'Re-enter your new password', Icons.lock_outline, textColor, sub, card, border, isPass: true),
@@ -137,21 +161,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
             
             SizedBox(width: double.infinity, height: 58,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : (_isOtpSent ? _verifyAndReset : _sendOtp),
+                onPressed: _isLoading ? null : (_step == 0 ? _sendOtp : (_step == 1 ? _continueToPassword : _verifyAndReset)),
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                 child: _isLoading 
                   ? const CircularProgressIndicator(color: Colors.white) 
-                  : Text(_isOtpSent ? 'Verify & Reset' : 'Send OTP', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  : Text(_step == 0 ? 'Send OTP' : (_step == 1 ? 'Verify OTP' : 'Reset Password'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 24),
             TextButton(
               onPressed: () {
-                if (_isOtpSent) {
+                if (_step == 1) {
                   setState(() {
-                    _isOtpSent = false;
+                    _step = 0;
                     _error = null;
                     _otpCtrl.clear();
+                  });
+                } else if (_step == 2) {
+                  setState(() {
+                    _step = 1;
+                    _error = null;
                     _passCtrl.clear();
                     _confirmPassCtrl.clear();
                   });
@@ -159,7 +188,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
                   context.go(RouteConstants.login);
                 }
               }, 
-              child: Text(_isOtpSent ? 'Back to Email' : 'Back to Login', style: TextStyle(color: sub))
+              child: Text(_step == 0 ? 'Back to Login' : 'Back', style: TextStyle(color: sub))
             ),
           ])),
         ))),

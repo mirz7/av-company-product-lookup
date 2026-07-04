@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from django.contrib.auth.models import User
 from django.utils import timezone
 from .models import UserProfile, ActivityLog, AdminNotification
-from .serializers import AdminEmployeeSerializer, AdminNotificationSerializer
+from .serializers import AdminEmployeeSerializer, AdminNotificationSerializer, ActivityLogSerializer
 
 
 class AdminNotificationListView(generics.ListAPIView):
@@ -75,6 +75,47 @@ class AdminDashboardView(APIView):
             'total_products': total_products,
             'recent_activity': recent_activity,
         })
+
+
+from rest_framework.pagination import PageNumberPagination
+
+class AdminActivityLogPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+class AdminActivityLogListView(generics.ListAPIView):
+    """Lists all activity logs for admin audit."""
+    serializer_class = ActivityLogSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    pagination_class = AdminActivityLogPagination
+
+    def get_queryset(self):
+        queryset = ActivityLog.objects.all().order_by('-created_at')
+        activity_type = self.request.query_params.get('type', '')
+        search = self.request.query_params.get('search', '')
+
+        if activity_type == 'access':
+            queryset = queryset.filter(
+                activity_type__in=['access_change', 'employee_approved', 'employee_rejected']
+            )
+        elif activity_type == 'employee':
+            queryset = queryset.filter(
+                activity_type__in=['employee_onboarded', 'profile_update']
+            )
+        elif activity_type == 'inventory':
+            queryset = queryset.filter(
+                activity_type__in=['inventory_audit', 'data_sync', 'policy_update']
+            )
+
+        if search:
+            from django.db.models import Q
+            queryset = queryset.filter(
+                Q(title__icontains=search) | Q(subtitle__icontains=search)
+            )
+
+        return queryset
 
 
 class AdminEmployeeListView(generics.ListAPIView):
@@ -326,30 +367,27 @@ class AdminUploadInventoryView(APIView):
         rows_data = []
         headers = []
 
-        if filename.endswith('.xlsx'):
-            try:
-                wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
-                sheet = wb.active
-                # Read all rows as lists of values
-                excel_rows = list(sheet.iter_rows(values_only=True))
-                if not excel_rows:
-                    return Response({'error': 'Excel sheet is empty.'}, status=400)
-                
-                # First row is headers
-                raw_headers = excel_rows[0]
-                for h in raw_headers:
-                    if h is not None:
-                        headers.append(str(h).strip().lower())
-                    else:
-                        headers.append('')
-                
-                # Rest are rows
-                for row in excel_rows[1:]:
-                    if row and any(cell is not None and str(cell).strip() != '' for cell in row):
-                        rows_data.append([str(cell) if cell is not None else '' for cell in row])
-            except Exception as e:
-                return Response({'error': f'Failed to parse Excel file: {str(e)}'}, status=400)
-        else:
+        try:
+            wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
+            sheet = wb.active
+            # Read all rows as lists of values
+            excel_rows = list(sheet.iter_rows(values_only=True))
+            if not excel_rows:
+                return Response({'error': 'Excel sheet is empty.'}, status=400)
+            
+            # First row is headers
+            raw_headers = excel_rows[0]
+            for h in raw_headers:
+                if h is not None:
+                    headers.append(str(h).strip().lower())
+                else:
+                    headers.append('')
+            
+            # Rest are rows
+            for row in excel_rows[1:]:
+                if row and any(cell is not None and str(cell).strip() != '' for cell in row):
+                    rows_data.append([str(cell) if cell is not None else '' for cell in row])
+        except Exception:
             return Response({'error': 'Invalid file format. Only Excel (.XLSX) files are supported. CSV is not allowed.'}, status=400)
 
         if not headers or all(h == '' for h in headers):

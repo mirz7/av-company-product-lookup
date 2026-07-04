@@ -12,8 +12,10 @@ class DashboardProvider extends ChangeNotifier {
   final DashboardService _service = DashboardService();
   final AudioPlayer _audioPlayer = AudioPlayer();
   DashboardMetrics? metrics;
+  List<ActivityItem> allActivities = [];
   int _lastPendingCount = 0;
   bool isLoading = false;
+  bool isActivitiesLoading = false;
   String? errorMessage;
   Timer? _pollTimer;
 
@@ -26,6 +28,47 @@ class DashboardProvider extends ChangeNotifier {
       errorMessage = e.toString();
     } finally {
       isLoading = false; notifyListeners();
+    }
+  }
+
+  int _currentActivitiesPage = 1;
+  bool hasMoreActivities = true;
+
+  Future<void> fetchAllActivities({
+    bool refresh = false,
+    String activityType = '',
+    String search = '',
+  }) async {
+    if (refresh) {
+      _currentActivitiesPage = 1;
+      allActivities = [];
+      hasMoreActivities = true;
+    }
+    if (!hasMoreActivities) return;
+    isActivitiesLoading = true; errorMessage = null; notifyListeners();
+    try {
+      final result = await _service.getActivities(
+        page: _currentActivitiesPage,
+        activityType: activityType,
+        search: search,
+      );
+      final List<ActivityItem> newItems = result['results'];
+      
+      if (refresh) {
+        allActivities = newItems;
+      } else {
+        allActivities.addAll(newItems);
+      }
+      
+      hasMoreActivities = result['next'];
+      if (hasMoreActivities) {
+        _currentActivitiesPage++;
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+      hasMoreActivities = false;
+    } finally {
+      isActivitiesLoading = false; notifyListeners();
     }
   }
 
