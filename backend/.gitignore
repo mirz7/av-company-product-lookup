@@ -36,6 +36,7 @@ media/
 .env
 .env.local
 .env.*
+!.env.example
 
 # IDEs
 .idea/
