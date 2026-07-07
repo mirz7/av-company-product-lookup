@@ -368,10 +368,39 @@ class AdminUploadInventoryView(APIView):
         headers = []
 
         try:
-            wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
-            sheet = wb.active
-            # Read all rows as lists of values
-            excel_rows = list(sheet.iter_rows(values_only=True))
+            if filename.endswith('.xlsx'):
+                wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
+                sheet = wb.active
+                excel_rows = list(sheet.iter_rows(values_only=True))
+            elif filename.endswith('.xls'):
+                import xlrd, csv as csvmod
+
+                def parse_xls_text_fallback(raw_bytes):
+                    """Fallback: parse text-based files disguised as .xls (tab or comma separated)."""
+                    for encoding in ('utf-8-sig', 'utf-8', 'latin-1', 'cp1252'):
+                        try:
+                            text = raw_bytes.decode(encoding)
+                            break
+                        except UnicodeDecodeError:
+                            continue
+                    else:
+                        raise ValueError('Unable to decode file as text.')
+                    first_line = text.splitlines()[0] if text.splitlines() else ''
+                    delimiter = '\t' if first_line.count('\t') >= first_line.count(',') else ','
+                    reader = csvmod.reader(io.StringIO(text), delimiter=delimiter)
+                    return [tuple(row) for row in reader]
+
+                try:
+                    book = xlrd.open_workbook(file_contents=file_bytes)
+                    sheet = book.sheet_by_index(0)
+                    excel_rows = []
+                    for rx in range(sheet.nrows):
+                        excel_rows.append(sheet.row_values(rx))
+                except xlrd.XLRDError:
+                    excel_rows = parse_xls_text_fallback(file_bytes)
+            else:
+                return Response({'error': 'Invalid file format. Only Excel (.XLSX and .XLS) files are supported.'}, status=400)
+
             if not excel_rows:
                 return Response({'error': 'Excel sheet is empty.'}, status=400)
             
@@ -383,12 +412,28 @@ class AdminUploadInventoryView(APIView):
                 else:
                     headers.append('')
             
+            def clean_val(cell):
+                if cell is None:
+                    return ''
+                if isinstance(cell, float):
+                    if cell.is_integer():
+                        return str(int(cell))
+                val_str = str(cell).strip()
+                if val_str.endswith('.0'):
+                    try:
+                        f = float(val_str)
+                        if f.is_integer():
+                            return str(int(f))
+                    except ValueError:
+                        pass
+                return val_str
+
             # Rest are rows
             for row in excel_rows[1:]:
                 if row and any(cell is not None and str(cell).strip() != '' for cell in row):
-                    rows_data.append([str(cell) if cell is not None else '' for cell in row])
-        except Exception:
-            return Response({'error': 'Invalid file format. Only Excel (.XLSX) files are supported. CSV is not allowed.'}, status=400)
+                    rows_data.append([clean_val(cell) for cell in row])
+        except Exception as e:
+            return Response({'error': f'Invalid file format or error parsing Excel file: {str(e)}'}, status=400)
 
         if not headers or all(h == '' for h in headers):
             return Response({'error': 'File is empty or missing headers.'}, status=400)

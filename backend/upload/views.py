@@ -83,20 +83,50 @@ def portal_dashboard(request):
         mode = "upsert"
 
     if not uploaded_file:
-        context["upload_error"] = "No file selected. Please choose an Excel (.xlsx) file."
+        context["upload_error"] = "No file selected. Please choose an Excel (.xlsx or .xls) file."
         return render(request, "upload/dashboard.html", context)
 
     filename = uploaded_file.name.lower()
-    if not filename.endswith(".xlsx"):
-        context["upload_error"] = "Only Excel (.xlsx) files are accepted."
+    if not (filename.endswith(".xlsx") or filename.endswith(".xls")):
+        context["upload_error"] = "Only Excel (.xlsx or .xls) files are accepted."
         return render(request, "upload/dashboard.html", context)
 
     # Parse Excel -----------------------------------------------------------
     file_bytes = uploaded_file.read()
+
+    def parse_xls_text_fallback(raw_bytes):
+        """Fallback: parse text-based files disguised as .xls (tab or comma separated)."""
+        import csv as csvmod
+        for encoding in ('utf-8-sig', 'utf-8', 'latin-1', 'cp1252'):
+            try:
+                text = raw_bytes.decode(encoding)
+                break
+            except UnicodeDecodeError:
+                continue
+        else:
+            raise ValueError("Unable to decode file as text.")
+        # Detect delimiter: tab wins if there are more tabs than commas on first line
+        first_line = text.splitlines()[0] if text.splitlines() else ''
+        delimiter = '\t' if first_line.count('\t') >= first_line.count(',') else ','
+        reader = csvmod.reader(io.StringIO(text), delimiter=delimiter)
+        return [tuple(row) for row in reader]
+
     try:
-        wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
-        sheet = wb.active
-        excel_rows = list(sheet.iter_rows(values_only=True))
+        if filename.endswith(".xlsx"):
+            wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
+            sheet = wb.active
+            excel_rows = list(sheet.iter_rows(values_only=True))
+        else:
+            # Try true binary .xls first; fall back to text-based (TSV/CSV disguised as .xls)
+            import xlrd
+            try:
+                book = xlrd.open_workbook(file_contents=file_bytes)
+                sheet = book.sheet_by_index(0)
+                excel_rows = []
+                for rx in range(sheet.nrows):
+                    excel_rows.append(sheet.row_values(rx))
+            except xlrd.XLRDError:
+                excel_rows = parse_xls_text_fallback(file_bytes)
     except Exception as exc:
         context["upload_error"] = f"Failed to parse Excel file: {exc}"
         return render(request, "upload/dashboard.html", context)
@@ -111,10 +141,26 @@ def portal_dashboard(request):
     for h in raw_headers:
         headers.append(str(h).strip().lower() if h is not None else "")
 
+    def clean_val(cell):
+        if cell is None:
+            return ""
+        if isinstance(cell, float):
+            if cell.is_integer():
+                return str(int(cell))
+        val_str = str(cell).strip()
+        if val_str.endswith(".0"):
+            try:
+                f = float(val_str)
+                if f.is_integer():
+                    return str(int(f))
+            except ValueError:
+                pass
+        return val_str
+
     rows_data = []
     for row in excel_rows[1:]:
         if row and any(cell is not None and str(cell).strip() != "" for cell in row):
-            rows_data.append([str(cell) if cell is not None else "" for cell in row])
+            rows_data.append([clean_val(cell) for cell in row])
 
     # Column index detection ------------------------------------------------
     code_idx = name_idx = label_idx = price1_idx = price2_idx = price3_idx = None
