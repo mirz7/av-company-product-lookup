@@ -1,3 +1,3 @@
 Set WshShell = CreateObject("WScript.Shell")
-strPath = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
-WshShell.Run """" & strPath & "\venv\Scripts\pythonw.exe"" """ & strPath & "\serve.py""", 0, False
+WshShell.CurrentDirectory = "C:\Users\AVSERVER\av-company-backend\backend"
+WshShell.Run chr(34) & "C:\Users\AVSERVER\av-company-backend\backend\start_backend.bat" & chr(34), 0, False
