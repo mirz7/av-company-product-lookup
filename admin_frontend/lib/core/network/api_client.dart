@@ -27,7 +27,7 @@ class ApiClient {
         Uri.parse('${ApiConstants.baseUrl}/token/refresh/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'refresh': refreshToken}),
-      );
+      ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -53,10 +53,10 @@ class ApiClient {
 
   // Wrapper for GET
   static Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
-    http.Response res = await http.get(url, headers: await _addToken(headers));
+    http.Response res = await http.get(url, headers: await _addToken(headers)).timeout(const Duration(seconds: 5));
     if (res.statusCode == 401) {
       if (await refreshToken()) {
-        res = await http.get(url, headers: await _addToken(headers));
+        res = await http.get(url, headers: await _addToken(headers)).timeout(const Duration(seconds: 5));
       }
     }
     return res;
@@ -64,10 +64,10 @@ class ApiClient {
 
   // Wrapper for POST
   static Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body}) async {
-    http.Response res = await http.post(url, headers: await _addToken(headers), body: body);
+    http.Response res = await http.post(url, headers: await _addToken(headers), body: body).timeout(const Duration(seconds: 5));
     if (res.statusCode == 401) {
       if (await refreshToken()) {
-        res = await http.post(url, headers: await _addToken(headers), body: body);
+        res = await http.post(url, headers: await _addToken(headers), body: body).timeout(const Duration(seconds: 5));
       }
     }
     return res;
@@ -75,10 +75,10 @@ class ApiClient {
 
   // Wrapper for PUT
   static Future<http.Response> put(Uri url, {Map<String, String>? headers, Object? body}) async {
-    http.Response res = await http.put(url, headers: await _addToken(headers), body: body);
+    http.Response res = await http.put(url, headers: await _addToken(headers), body: body).timeout(const Duration(seconds: 5));
     if (res.statusCode == 401) {
       if (await refreshToken()) {
-        res = await http.put(url, headers: await _addToken(headers), body: body);
+        res = await http.put(url, headers: await _addToken(headers), body: body).timeout(const Duration(seconds: 5));
       }
     }
     return res;
@@ -86,10 +86,10 @@ class ApiClient {
 
   // Wrapper for PATCH
   static Future<http.Response> patch(Uri url, {Map<String, String>? headers, Object? body}) async {
-    http.Response res = await http.patch(url, headers: await _addToken(headers), body: body);
+    http.Response res = await http.patch(url, headers: await _addToken(headers), body: body).timeout(const Duration(seconds: 5));
     if (res.statusCode == 401) {
       if (await refreshToken()) {
-        res = await http.patch(url, headers: await _addToken(headers), body: body);
+        res = await http.patch(url, headers: await _addToken(headers), body: body).timeout(const Duration(seconds: 5));
       }
     }
     return res;
@@ -97,10 +97,10 @@ class ApiClient {
 
   // Wrapper for DELETE
   static Future<http.Response> delete(Uri url, {Map<String, String>? headers, Object? body}) async {
-    http.Response res = await http.delete(url, headers: await _addToken(headers), body: body);
+    http.Response res = await http.delete(url, headers: await _addToken(headers), body: body).timeout(const Duration(seconds: 5));
     if (res.statusCode == 401) {
       if (await refreshToken()) {
-        res = await http.delete(url, headers: await _addToken(headers), body: body);
+        res = await http.delete(url, headers: await _addToken(headers), body: body).timeout(const Duration(seconds: 5));
       }
     }
     return res;

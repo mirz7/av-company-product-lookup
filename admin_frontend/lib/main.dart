@@ -28,32 +28,43 @@ import 'screens/login/reset_password_screen.dart';
 import 'services/background_service.dart';
 
 void main() async {
+  print("DEBUG: main() started");
   WidgetsFlutterBinding.ensureInitialized();
+  print("DEBUG: WidgetsFlutterBinding.ensureInitialized() completed");
   
   if (!kIsWeb) {
-    // Initialize notifications for foreground tap handling
-    final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_notification');
-    const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
-    
-    await flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        if (response.payload == 'new_registration') {
-          _router.go(RouteConstants.approvals);
-        }
-      },
-    );
+    try {
+      print("DEBUG: Initializing local notifications");
+      final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+      const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+      
+      await flutterLocalNotificationsPlugin.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          if (response.payload == 'new_registration') {
+            _router.go(RouteConstants.approvals);
+          }
+        },
+      );
+      print("DEBUG: Local notifications initialized");
 
-    // Request permissions for Android 13+ (API 33+)
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
+      // Request permissions for Android 13+ (API 33+)
+      print("DEBUG: Requesting notifications permission");
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+      print("DEBUG: Notifications permission requested");
 
-    await initializeService();
+      print("DEBUG: Initializing background service");
+      await initializeService();
+      print("DEBUG: Background service initialized");
+    } catch (e) {
+      print("DEBUG: Error during native initialization: $e");
+    }
   }
 
-  
+  print("DEBUG: Calling runApp()");
   runApp(
     MultiProvider(
       providers: [

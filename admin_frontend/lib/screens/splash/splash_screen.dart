@@ -20,29 +20,36 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   void initState() {
     super.initState();
+    print("DEBUG: SplashScreen initState()");
     _pulse = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
     _check();
   }
 
   Future<void> _check() async {
+    print("DEBUG: SplashScreen _check() started");
     await Future.delayed(const Duration(milliseconds: 1000));
     if (!mounted) return;
     
-    // Check if initial setup is needed
+    print("DEBUG: Calling authService.isAdminSetupNeeded()");
     final authService = AuthService();
     final setupNeeded = await authService.isAdminSetupNeeded();
+    print("DEBUG: authService.isAdminSetupNeeded() completed. Result: $setupNeeded");
     
     if (!mounted) return;
     
     if (setupNeeded) {
+      print("DEBUG: Navigating to register");
       context.go(RouteConstants.register);
       return;
     }
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
+    print("DEBUG: Access token from SharedPreferences: $token");
     if (!mounted) return;
-    context.go(token != null && token.isNotEmpty ? RouteConstants.dashboard : RouteConstants.login);
+    final destination = token != null && token.isNotEmpty ? RouteConstants.dashboard : RouteConstants.login;
+    print("DEBUG: Navigating to destination: $destination");
+    context.go(destination);
   }
 
   @override

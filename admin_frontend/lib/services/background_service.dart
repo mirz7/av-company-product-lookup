@@ -60,7 +60,7 @@ void onStart(ServiceInstance service) async {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   
   // MUST initialize inside onStart for background notifications to work visually
-  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_notification');
+  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
   const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
@@ -73,7 +73,7 @@ void onStart(ServiceInstance service) async {
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse('http://192.168.0.108:8000/api/admin/notifications/?is_read=false'),
+        Uri.parse('http://192.168.0.138:8000/api/admin/notifications/?is_read=false'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

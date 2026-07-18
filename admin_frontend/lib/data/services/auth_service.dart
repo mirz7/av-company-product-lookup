@@ -45,7 +45,7 @@ class AuthService {
 
   Future<bool> isAdminSetupNeeded() async {
     try {
-      final response = await http.get(Uri.parse(ApiConstants.setupCheck));
+      final response = await http.get(Uri.parse(ApiConstants.setupCheck)).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return !(data['admin_exists'] ?? true);
